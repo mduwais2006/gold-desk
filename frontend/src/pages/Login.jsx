@@ -1,0 +1,97 @@
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-toastify';
+import { auth, setupRecaptcha, signInWithPhoneNumber } from '../utils/firebase';
+
+const Login = () => {
+    const { register, handleSubmit, formState: { errors } } = useForm();
+    const [isLoading, setIsLoading] = useState(false);
+    const { login } = useAuth();
+    const navigate = useNavigate();
+
+    const onSubmit = async (data) => {
+        try {
+            setIsLoading(true);
+            const res = await login(data.loginIdentifier, data.password);
+
+            if (res.authMethod === 'firebase_phone') {
+                toast.info('Sending SMS via Google Firebase...');
+                const recaptchaVerifier = setupRecaptcha('sign-in-button');
+
+                try {
+                    const confirmationResult = await signInWithPhoneNumber(auth, res.formattedPhone, recaptchaVerifier);
+                    window.confirmationResult = confirmationResult;
+                    toast.success('SMS Sent to your Mobile!');
+                    navigate('/verify-otp', { state: { loginIdentifier: data.loginIdentifier, authMethod: res.authMethod, formattedPhone: res.formattedPhone, password: data.password } });
+                } catch (ferr) {
+                    console.error("Firebase Auth Error", ferr);
+                    toast.error('Firebase SMS Failed. Usually invalid config or phone format.');
+                    if (window.recaptchaVerifier) { window.recaptchaVerifier.clear(); window.recaptchaVerifier = null; }
+                }
+            } else {
+                toast.success(res.message || 'OTP Sent');
+                navigate('/verify-otp', { state: { loginIdentifier: res.loginIdentifier, authMethod: 'email', password: data.password } });
+            }
+
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Login failed');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="auth-wrapper">
+            <div className="auth-card glass-panel animate-fade-in">
+                <div className="text-center mb-4">
+                    <h2 className="fw-bold mb-1" style={{ color: 'var(--accent-primary)' }}>Gold Desk</h2>
+                    <p className="text-secondary small">Secure Access to Your Business</p>
+                </div>
+
+                <form onSubmit={handleSubmit(onSubmit)} className="d-flex flex-column gap-3">
+                    <div>
+                        <label className="form-label small fw-semibold">Email or Phone Number</label>
+                        <input
+                            type="text"
+                            className="form-control w-100 form-control-glass"
+                            placeholder="Email or +1 234 567 890"
+                            {...register('loginIdentifier', { required: 'Email or Phone is required' })}
+                        />
+                        {errors.loginIdentifier && <span className="text-danger small mt-1 d-block">{errors.loginIdentifier.message}</span>}
+                    </div>
+
+                    <div>
+                        <label className="form-label small fw-semibold">Password</label>
+                        <input
+                            type="password"
+                            className="form-control w-100 form-control-glass"
+                            placeholder="••••••••"
+                            {...register('password', { required: 'Password is required' })}
+                        />
+                        <div className="text-end mt-1">
+                            <Link to="/forgot-password" title="Forgot Password" className="small text-secondary fw-semibold text-decoration-none hover-gold transition-all">
+                                Forgot Password?
+                            </Link>
+                        </div>
+                        {errors.password && <span className="text-danger small mt-1 d-block">{errors.password.message}</span>}
+                    </div>
+
+                    <div id="sign-in-button"></div>
+                    <button type="submit" className="btn-gold w-100 mt-2" disabled={isLoading}>
+                        {isLoading ? 'Authenticating...' : 'Sign In'}
+                    </button>
+
+                    <div className="text-center mt-3">
+                        <p className="small text-secondary mb-0">
+                            Don&apos;t have an account? <Link to="/register" className="fw-bold text-decoration-none" style={{ color: 'var(--accent-primary)' }}>Sign up</Link>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default Login;

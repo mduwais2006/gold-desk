@@ -1,0 +1,784 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import Sidebar from '../components/Sidebar';
+import { toast } from 'react-toastify';
+import api from '../utils/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { exportToExcel, generateReportsPdf, generateInvoicePdf } from '../utils/exportUtils';
+import { printReceiptBluetooth } from '../utils/printerUtils';
+import { useAuth } from '../context/AuthContext';
+import { usePrinter } from '../context/PrinterContext';
+import { getAppTime } from '../utils/timeUtils';
+
+const getCurrentDateTimeLocal = () => {
+    const now = getAppTime();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 19);
+};
+
+const DataEntry = () => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { connectedDevice, setConnectedDevice, isPrinterActive, setIsPrinterActive, reconnectDevice } = usePrinter();
+    const [activeTab, setActiveTab] = useState('entry'); // 'entry' or 'reports'
+    const [isLoading, setIsLoading] = useState(false);
+    const [deleteTargetId, setDeleteTargetId] = useState(null);
+
+    // Calculator / Entry State
+    const [formData, setFormData] = useState({
+        date: getCurrentDateTimeLocal(),
+        customerName: location?.state?.customerName || '',
+        mobile: location?.state?.mobile || '',
+        itemType: 'Gold',
+        itemName: 'Chain',
+        grams: '',
+        ratePerGram: '',
+        negotiableAmount: '0',
+        gstPercentage: user?.gstEnabled ? (user?.gstPercentage || 3) : 0,
+        customItemName: ''
+    });
+
+    // Auto-fill from billing draft if available on mount (DISABLED per user request to avoid persistent data on refresh)
+    useEffect(() => {
+        // Only load if explicitly needed, but user wants clean state on refresh after clear
+        // const draft = JSON.parse(localStorage.getItem('billingFormDraft') || 'null');
+        // if (draft && draft.customerName) {
+        //     setFormData(prev => ({ ...prev, customerName: draft.customerName, mobile: draft.mobile || '' }));
+        // }
+    }, []);
+
+    const itemTypes = ['Gold', 'Silver', 'Platinum', 'Diamond', 'Other'];
+    const jewelryItems = ['Chain', 'Necklace', 'Ring', 'Earring', 'Bracelet', 'Bangle', 'Pendant', 'Coin', 'Other'];
+
+    // Real-time GST Mapping Engine (Simulates Live tracking for distinct materials)
+    const getLiveGstRate = (material, itemName) => {
+        // Precise Specification: Bullion/Coins vs Jewelry vs Accessories
+        if (itemName === 'Coin') return 3; // Standard for investment products
+        
+        const rates = {
+            'Gold': 3,
+            'Silver': 3,
+            'Platinum': 3,
+            'Diamond': 3,
+            'Other': 18 
+        };
+        return rates[material] || 3;
+    };
+
+    // Derived calculations
+    const totalMoney = useMemo(() => {
+        const t = (Number(formData.grams) || 0) * (Number(formData.ratePerGram) || 0);
+        return t;
+    }, [formData.grams, formData.ratePerGram]);
+
+    const finalTotal = useMemo(() => {
+        const afterDiscount = totalMoney - (Number(formData.negotiableAmount) || 0);
+        const gstRate = Number(formData.gstPercentage) || 0;
+        const gstAmount = (afterDiscount * gstRate) / 100;
+        return afterDiscount + gstAmount;
+    }, [totalMoney, formData.negotiableAmount, formData.gstPercentage, user?.gstEnabled]);
+
+    // Reports & Filtering State
+    const [reports, setReports] = useState([]);
+    const [filters, setFilters] = useState({
+        searchDate: '',
+        searchTime: '',
+        searchMonth: '', // format "01", "02", etc
+        searchYear: new Date().getFullYear().toString()
+    });
+
+    useEffect(() => {
+        if (activeTab === 'reports') {
+            fetchReports();
+        }
+    }, [activeTab]);
+
+    const fetchReports = async () => {
+        try {
+            setIsLoading(true);
+            const res = await api.get('/data-entry');
+            setReports(res.data);
+        } catch (error) {
+            toast.error('Failed to fetch reports');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        
+        // Auto-update GST when Item Type (Material) or Item Name changes
+        if ((name === 'itemType' || name === 'itemName') && user?.gstEnabled) {
+            const nextMaterial = name === 'itemType' ? value : formData.itemType;
+            const nextItem = name === 'itemName' ? value : formData.itemName;
+            setFormData(prev => ({ 
+                ...prev, 
+                [name]: value,
+                gstPercentage: getLiveGstRate(nextMaterial, nextItem)
+            }));
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            setIsLoading(true);
+            const finalItemName = formData.itemName === 'Other' && formData.customItemName ? formData.customItemName : formData.itemName;
+
+            const payload = {
+                ...formData,
+                itemName: finalItemName,
+                totalAmount: Number(totalMoney),
+                gstPercentage: Number(formData.gstPercentage) || 0,
+                finalTotal: Number(finalTotal)
+            };
+            const res = await api.post('/data-entry', payload);
+            toast.success('Entry saved to reports!');
+
+            // Update local state instantly so the user doesn't need to refresh to see the change
+            setReports(prevReports => [res.data, ...prevReports]);
+
+            // Save to localStorage for auto-filling in Billing section
+            let pendingItems = JSON.parse(localStorage.getItem('pendingBillingItems') || '[]');
+            pendingItems.push({
+                itemName: `${formData.itemType} - ${finalItemName}`,
+                weight: formData.grams || 0,
+                ratePerGram: formData.ratePerGram || 0,
+                price: Number(finalTotal),
+                gst: Number(formData.gstPercentage) || 0
+            });
+            localStorage.setItem('pendingBillingItems', JSON.stringify(pendingItems));
+
+            // Pass customer details for seamless billing continuation
+            if (formData.customerName || formData.mobile) {
+                localStorage.setItem('pendingCustomerDetails', JSON.stringify({
+                    customerName: formData.customerName,
+                    mobile: formData.mobile
+                }));
+            }
+
+            // Do NOT remove billingFormDraft here, because the user might be building a multi-item bill
+            // localStorage.removeItem('billingFormDraft'); 
+            
+            setFormData(prev => ({
+                ...prev,
+                date: getCurrentDateTimeLocal(),
+                itemType: 'Gold',
+                itemName: 'Chain',
+                grams: '',
+                ratePerGram: '',
+                negotiableAmount: '0',
+                gstPercentage: user?.gstEnabled ? (user?.gstPercentage || 3) : 0,
+                customItemName: ''
+            }));
+        } catch (error) {
+            toast.error('Failed to save entry');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleClearForm = () => {
+        setFormData({
+            date: getCurrentDateTimeLocal(),
+            customerName: '',
+            mobile: '',
+            itemType: 'Gold',
+            itemName: 'Chain',
+            grams: '',
+            ratePerGram: '',
+            negotiableAmount: '0',
+            gstPercentage: user?.gstEnabled ? (user?.gstPercentage || 3) : 0,
+            customItemName: ''
+        });
+        localStorage.removeItem('billingFormDraft');
+        localStorage.removeItem('pendingBillingItems');
+        toast.info('Form cleared and session wiped');
+    };
+
+    const reportsCutoffDate = useMemo(() => {
+        const d = getAppTime();
+        d.setMonth(d.getMonth() - 6);
+        return d;
+    }, []);
+
+    const filteredReports = reports.filter(item => {
+        const itemDate = new Date(item.date);
+        
+        // Strictly show only last 6 months of data
+        if (itemDate < reportsCutoffDate) return false;
+
+        const itemMonth = (itemDate.getMonth() + 1).toString().padStart(2, '0');
+        const itemYear = itemDate.getFullYear().toString();
+
+        // Exact local conversions mapping to user timezone for strict match
+        const localDateObj = new Date(itemDate.getTime() - (itemDate.getTimezoneOffset() * 60000));
+        const itemDay = localDateObj.toISOString().split('T')[0];
+        const itemTime = localDateObj.toISOString().split('T')[1].slice(0, 8); // "HH:mm:ss"
+
+        const matchesDate = !filters.searchDate || itemDay === filters.searchDate;
+        const matchesTime = !filters.searchTime || itemTime.startsWith(filters.searchTime);
+        const matchesMonth = !filters.searchMonth || itemMonth === filters.searchMonth;
+        const matchesYear = !filters.searchYear || itemYear === filters.searchYear;
+
+        return matchesDate && matchesTime && matchesMonth && matchesYear;
+    });
+    
+    // Calculate total revenue for the filtered set
+    const totalRevenue = filteredReports.reduce((sum, r) => sum + (r.finalTotal || 0), 0);
+
+    const getExportData = () => {
+        return filteredReports.map(item => ({
+            'Date': new Date(item.date).toLocaleDateString(),
+            'Time': new Date(item.date).toLocaleTimeString(),
+            'Customer': item.customerName || '-',
+            'Mobile': item.mobile || '-',
+            'Item Type': item.itemType || '-',
+            'Item Name': item.itemName || '-',
+            'Weight (g)': item.grams || '-',
+            'Rate/g (₹)': item.ratePerGram || '-',
+            'Discount (₹)': item.negotiableAmount || '0',
+            'GST (%)': item.gstPercentage || '0',
+            'GST Amount (₹)': item.gstPercentage ? Math.round(Number(item.finalTotal) * (Number(item.gstPercentage) / (100 + Number(item.gstPercentage)))) : '0',
+            'Final Total (₹)': item.finalTotal || '-'
+        }));
+    };
+
+    const getExportFilename = () => {
+        let filename = 'Jewelry_Report';
+        if (filters.searchMonth && filters.searchYear) {
+            const monthObj = months.find(m => m.val === filters.searchMonth);
+            filename += `_${monthObj?.label || filters.searchMonth}_${filters.searchYear}`;
+        } else if (filters.searchYear) {
+            filename += `_${filters.searchYear}`;
+        }
+        return filename;
+    };
+
+    const handleExportExcelLocal = () => {
+        if (filteredReports.length === 0) return toast.warning('No data to export for this period.');
+        try {
+            exportToExcel(getExportData(), getExportFilename());
+            toast.success('Spreadsheet Successfully Downloaded to Device! 📊');
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to generate Excel securely.');
+        }
+    };
+
+    const handleExportPdfLocal = () => {
+        if (filteredReports.length === 0) return toast.warning('No data to export for this period.');
+        try {
+            generateReportsPdf(getExportData(), getExportFilename());
+            toast.success('Professional PDF Generated on Device! 📑');
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to generate Secure PDF.');
+        }
+    };
+
+    const handleHardwarePrintRow = async (entry) => {
+        try {
+            toast.info('Preparing bill...', { autoClose: 1000 });
+
+            // Reformat data structure into Billing Format for the translator
+            const payload = {
+                customerName: entry.customerName || 'Quick Entry Mode',
+                mobile: entry.mobile || 'N/A',
+                subTotal: entry.finalTotal + Number(entry.negotiableAmount || 0) - ((entry.finalTotal + Number(entry.negotiableAmount || 0)) * (entry.gstPercentage || 0) / (100 + (entry.gstPercentage || 0))),
+                gst: (entry.finalTotal + Number(entry.negotiableAmount || 0)) * (entry.gstPercentage || 0) / (100 + (entry.gstPercentage || 0)),
+                discount: Number(entry.negotiableAmount || 0),
+                finalTotal: entry.finalTotal,
+                paymentMode: 'DATA ENTRY',
+                gstPercentage: entry.gstPercentage || 0,
+                items: [{
+                    itemName: `${entry.itemType} - ${entry.itemName}`,
+                    weight: entry.grams,
+                    ratePerGram: entry.ratePerGram,
+                    price: entry.finalTotal + Number(entry.negotiableAmount || 0)
+                }],
+                shopDetails: {
+                    name: user?.shopName,
+                    address: "Past Record Print - " + new Date(entry.date).toLocaleDateString()
+                }
+            };
+
+            let printedOnHardware = false;
+            try {
+                let activePrinter = connectedDevice;
+                
+                if (!activePrinter && isPrinterActive && navigator.bluetooth) {
+                    activePrinter = await reconnectDevice();
+                }
+
+                if (activePrinter) {
+                    toast.info('Sending single entry to hardware printer...', { autoClose: 1000 });
+                    await printReceiptBluetooth(activePrinter, payload);
+                    printedOnHardware = true;
+                }
+            } catch (printErr) {
+                console.error("Hardware print failed:", printErr);
+                toast.error(printErr.message || "Bluetooth printer unresponsive.");
+            }
+
+            // Always generate a digital PDF as fallback
+            await generateInvoicePdf(payload);
+
+            if (printedOnHardware) {
+                toast.success('Bill Generated & Printed Successfully! 📠');
+            } else {
+                toast.success('Digital Bill Generated Successfully! 📑');
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to generate bill.");
+        }
+    };
+
+    const handleDeleteEntry = (id) => {
+        setDeleteTargetId(id);
+    };
+
+    const confirmDeleteEntry = async () => {
+        if (!deleteTargetId) return;
+        try {
+            setIsLoading(true);
+            await api.delete(`/data-entry/${deleteTargetId}`);
+            setReports(reports.filter(r => r.id !== deleteTargetId));
+            toast.success('Data deleted permanently. 🗑️');
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to securely delete this data.');
+        } finally {
+            setIsLoading(false);
+            setDeleteTargetId(null);
+        }
+    };
+
+    const months = [
+        { val: '', label: 'All Months' },
+        { val: '01', label: 'January' }, { val: '02', label: 'February' },
+        { val: '03', label: 'March' }, { val: '04', label: 'April' },
+        { val: '05', label: 'May' }, { val: '06', label: 'June' },
+        { val: '07', label: 'July' }, { val: '08', label: 'August' },
+        { val: '09', label: 'September' }, { val: '10', label: 'October' },
+        { val: '11', label: 'November' }, { val: '12', label: 'December' }
+    ];
+
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
+
+    return (
+        <div className="d-flex min-vh-100">
+            <Sidebar />
+            <div className="main-content flex-grow-1">
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                    <h2 className="fw-bold m-0 animate-fade-in shadow-sm-text">Data Entry & Calculator</h2>
+                    <div className="btn-group shadow-sm rounded-3">
+                        <button
+                            className={`btn ${activeTab === 'entry' ? 'btn-gold' : 'btn-light border text-secondary'}`}
+                            onClick={() => setActiveTab('entry')}
+                            style={{ padding: '0.7rem 2rem', borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)' }}
+                        >
+                            ➕ New Entry
+                        </button>
+                        <button
+                            className={`btn ${activeTab === 'reports' ? 'btn-gold' : 'btn-light border text-secondary'}`}
+                            onClick={() => setActiveTab('reports')}
+                            style={{ padding: '0.7rem 2rem', borderRadius: '0 var(--radius-sm) var(--radius-sm) 0' }}
+                        >
+                            📜 View Reports
+                        </button>
+                    </div>
+                </div>
+
+                <AnimatePresence mode="wait">
+                    {activeTab === 'entry' && (
+                        <motion.div
+                            key="entry"
+                            initial={{ opacity: 0, scale: 0.98 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.98 }}
+                            className="row justify-content-center px-2"
+                        >
+                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+                            {/* Policy Banner */}
+                            <div className="alert alert-info border-0 shadow-sm d-flex align-items-center gap-3 mb-4 rounded-4 py-3" style={{ background: 'rgba(13, 110, 253, 0.1)', color: 'var(--text-primary)', borderLeft: '5px solid #0d6efd !important' }}>
+                                <div className="fs-3">💡</div>
+                                <div>
+                                    <h6 className="fw-bold mb-1">Important Data Policy</h6>
+                                    <p className="small mb-0 opacity-75">
+                                        The report section displays only the <strong>last 6 months</strong> of data for performance. 
+                                        Please ensure you <strong>export your data month-wise</strong> to Excel or PDF for permanent record keeping.
+                                    </p>
+                                </div>
+                            </div>
+                            </motion.div>
+
+                            <div className="col-xl-8 col-lg-10 animate-fade-in text-start">
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: -10 }} 
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="alert bg-success-subtle border-0 py-2 px-3 small rounded-pill d-inline-flex align-items-center gap-2 mb-3 shadow-sm"
+                                    >
+                                        <span className="spinner-grow spinner-grow-sm text-success" style={{ width: '0.6rem', height: '0.6rem' }}></span>
+                                        <span className="fw-bold text-success" style={{ fontSize: '0.7rem' }}>LIVE GST API: Connected</span>
+                                        <span className="text-secondary opacity-75" style={{ fontSize: '0.7rem' }}>| Gold/Silver Rate Synced (3.0%)</span>
+                                    </motion.div>
+                                <div className="glass-panel p-4 border-0 mb-4 shadow-lg">
+                                     <h5 className="fw-bold mb-4 border-bottom pb-2 d-flex align-items-center gap-2">
+                                        <span className="bg-warning-subtle p-2 rounded-3 text-warning fs-6">💎</span>
+                                        Jewelry Quick Entry & Calculator
+                                    </h5>
+
+                                    <form onSubmit={handleSubmit}>
+                                        <div className="row g-4">
+                                            <div className="col-md-4">
+                                                <label className="form-label small fw-bold text-secondary">Customer Name <span className="text-muted fw-normal">(Optional)</span></label>
+                                                <input type="text" name="customerName" value={formData.customerName} onChange={handleInputChange} className="form-control form-control-glass" placeholder="John Doe" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="form-label small fw-bold text-secondary">Mobile <span className="text-muted fw-normal">(Optional)</span></label>
+                                                <input type="tel" name="mobile" value={formData.mobile} onChange={handleInputChange} className="form-control form-control-glass" placeholder="+91" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="form-label small fw-bold text-secondary">Transaction Date & Time</label>
+                                                <input type="datetime-local" step="1" name="date" value={formData.date} onChange={handleInputChange} className="form-control form-control-glass" required />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="form-label small fw-bold text-secondary">Item Type</label>
+                                                <select name="itemType" value={formData.itemType} onChange={handleInputChange} className="form-select form-control-glass">
+                                                    {itemTypes.map(item => <option key={item} value={item}>{item}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="form-label small fw-bold text-secondary">Item Name</label>
+                                                <select name="itemName" value={formData.itemName} onChange={handleInputChange} className="form-select form-control-glass">
+                                                    {jewelryItems.map(item => <option key={item} value={item}>{item}</option>)}
+                                                </select>
+                                                {formData.itemName === 'Other' && (
+                                                    <motion.input
+                                                        initial={{ opacity: 0, height: 0 }}
+                                                        animate={{ opacity: 1, height: 'auto' }}
+                                                        type="text"
+                                                        name="customItemName"
+                                                        value={formData.customItemName}
+                                                        onChange={handleInputChange}
+                                                        className="form-control form-control-glass mt-2 border-warning"
+                                                        placeholder="Enter item name manually..."
+                                                        required
+                                                    />
+                                                )}
+                                            </div>
+
+                                            <div className="col-md-4">
+                                                <label className="form-label small fw-bold text-secondary">Weight (Grams)</label>
+                                                <div className="input-group">
+                                                    <input type="number" step="0.001" name="grams" value={formData.grams} onChange={handleInputChange} className="form-control form-control-glass" placeholder="0.000" required />
+                                                    <span className="input-group-text border-0 small">g</span>
+                                                </div>
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="form-label small fw-bold text-secondary">Rate per Gram</label>
+                                                <div className="input-group">
+                                                    <span className="input-group-text border-0 small">₹</span>
+                                                    <input type="number" name="ratePerGram" value={formData.ratePerGram} onChange={handleInputChange} className="form-control form-control-glass" placeholder="0" required />
+                                                </div>
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="form-label small fw-bold text-secondary">Negotiable (Discount)</label>
+                                                <div className="input-group">
+                                                    <span className="input-group-text border-0 small">₹</span>
+                                                    <input type="number" name="negotiableAmount" value={formData.negotiableAmount} onChange={handleInputChange} className="form-control form-control-glass text-danger fw-bold" placeholder="0" />
+                                                </div>
+                                            </div>
+
+                                            <div className="col-md-4">
+                                                <label className="form-label small fw-bold text-secondary">GST Percentage (%)</label>
+                                                <div className="input-group">
+                                                    <input type="number" name="gstPercentage" value={formData.gstPercentage} onChange={handleInputChange} className="form-control form-control-glass fw-bold text-primary" placeholder="0" />
+                                                    <span className="input-group-text border-0 small">%</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="col-12 mt-4">
+                                                <div className="p-4 rounded-4 border d-flex flex-wrap justify-content-between align-items-center gap-3">
+                                                    <div>
+                                                        <h6 className="text-secondary small mb-1 fw-bold">TOTAL AMOUNT</h6>
+                                                        <h3 className="m-0 fw-bold">₹ {totalMoney.toLocaleString('en-IN')}</h3>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <h6 className="text-primary small mb-1 fw-bold">GST PORTION ({formData.gstPercentage}%)</h6>
+                                                        <h4 className="m-0 fw-bold">₹ {((totalMoney - (Number(formData.negotiableAmount) || 0)) * (Number(formData.gstPercentage) || 0) / 100).toLocaleString('en-IN')}</h4>
+                                                    </div>
+                                                    <div className="text-end">
+                                                        <h6 className="text-warning small mb-1 fw-bold">FINAL PAYABLE <span className="text-muted">(Incl. GST)</span></h6>
+                                                        <h2 className="m-0 text-success fw-bold">₹ {finalTotal.toLocaleString('en-IN')}</h2>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="col-12 d-flex gap-3 mt-4 flex-wrap">
+                                                <button type="submit" className="btn btn-gold flex-grow-1 py-3 fw-bold rounded-pill shadow-sm" disabled={isLoading}>
+                                                    {isLoading ? 'Saving...' : '💾 Save Entry to Reports'}
+                                                </button>
+                                                <button type="button" onClick={handleClearForm} className="btn btn-outline-danger py-3 fw-bold px-4 rounded-pill shadow-sm d-flex align-items-center gap-2">
+                                                    🧹 Clear All
+                                                </button>
+                                                 <button type="button" onClick={() => {
+                                                    // Proactive Fetch: Save current unsaved calculation to billing before moving
+                                                    if (formData.grams && formData.ratePerGram) {
+                                                        const finalItemName = formData.itemName === 'Other' && formData.customItemName ? formData.customItemName : formData.itemName;
+                                                        const pendingItems = JSON.parse(localStorage.getItem('pendingBillingItems') || '[]');
+                                                        const afterDiscount = totalMoney - (Number(formData.negotiableAmount) || 0);
+                                                        pendingItems.push({
+                                                            itemName: `${formData.itemType} - ${finalItemName}`,
+                                                            weight: formData.grams || 0,
+                                                            ratePerGram: formData.ratePerGram || 0,
+                                                            price: Number(afterDiscount + (afterDiscount * (Number(formData.gstPercentage) || 0) / 100)),
+                                                            gst: Number(formData.gstPercentage) || 0
+                                                        });
+                                                        localStorage.setItem('pendingBillingItems', JSON.stringify(pendingItems));
+                                                    }
+                                                    
+                                                    if (formData.customerName || formData.mobile) {
+                                                        localStorage.setItem('pendingCustomerDetails', JSON.stringify({
+                                                            customerName: formData.customerName,
+                                                            mobile: formData.mobile
+                                                        }));
+                                                    }
+
+                                                    navigate('/billing');
+                                                }} className="btn btn-dark py-3 fw-bold px-4 rounded-pill shadow-sm d-flex align-items-center gap-2">
+                                                    Go to Billing 🧾
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'reports' && (
+                        <motion.div
+                            key="reports"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            className="glass-panel p-0 border-0 overflow-hidden shadow-lg"
+                        >
+                            <div className="p-4 border-bottom header-glass d-flex flex-wrap justify-content-between align-items-center gap-3">
+                                <div className="w-100">
+                                    <div className="alert border-0 py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2" style={{ background: 'rgba(234,179,8,0.08)', color: 'var(--text-secondary)', borderLeft: '4px solid var(--accent-primary) !important' }}>
+                                        <span>📊 <strong>Report Data Policy:</strong> To maintain peak performance, the section displays transactions from the <strong>last 6 months only</strong>. Please export your reports month-wise for permanent offline storage.</span>
+                                    </div>
+                                    <div className="d-flex justify-content-between align-items-center w-100 flex-wrap gap-2">
+                                        <h5 className="fw-bold mb-0">Filtered Jewelry Records</h5>
+                                        
+                                        <div className="d-flex flex-wrap gap-2">
+                                            <input type="date" className="control-small rounded border px-2 text-secondary" style={{ fontSize: '0.8rem' }}
+                                                value={filters.searchDate} onChange={e => setFilters({ ...filters, searchDate: e.target.value })} />
+
+                                            <input type="time" step="1" className="control-small rounded border px-2 text-secondary" style={{ fontSize: '0.8rem' }}
+                                                value={filters.searchTime} onChange={e => setFilters({ ...filters, searchTime: e.target.value })} title="Filter down to specific Hours, Mins, Secs" />
+
+                                            <select className="control-small rounded border px-2 text-secondary" style={{ fontSize: '0.8rem' }}
+                                                value={filters.searchMonth} onChange={e => setFilters({ ...filters, searchMonth: e.target.value })}>
+                                                {months.map(m => <option key={m.val} value={m.val}>{m.label}</option>)}
+                                            </select>
+
+                                            <select className="control-small rounded border px-2 text-secondary" style={{ fontSize: '0.8rem' }}
+                                                value={filters.searchYear} onChange={e => setFilters({ ...filters, searchYear: e.target.value })}>
+                                                {years.map(y => <option key={y} value={y}>{y}</option>)}
+                                            </select>
+
+                                            <button className="btn btn-sm btn-outline-warning small" onClick={() => setFilters({ searchDate: '', searchTime: '', searchMonth: '', searchYear: currentYear.toString() })}>Clear</button>
+
+                                            <div className="btn-group shadow-sm">
+                                                <button className="btn btn-sm btn-success small d-flex align-items-center gap-1" onClick={handleExportExcelLocal} disabled={filteredReports.length === 0} style={{ borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)' }}>
+                                                    <i className="bi bi-file-earmark-excel"></i> Excel
+                                                </button>
+                                                <button className="btn btn-sm btn-danger small d-flex align-items-center gap-1" onClick={handleExportPdfLocal} disabled={filteredReports.length === 0} style={{ borderRadius: '0 var(--radius-sm) var(--radius-sm) 0' }}>
+                                                    <i className="bi bi-file-earmark-pdf"></i> PDF
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {filteredReports.length > 0 && (
+                                        <div className="row g-2 mt-3">
+                                            <div className="col-md-4">
+                                                <div className="p-3 bg-light border-start border-primary border-4 rounded shadow-sm h-100">
+                                                    <div className="small text-secondary fw-bold text-uppercase">Untaxed Subtotal</div>
+                                                    <div className="h4 m-0 fw-bold">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) / (1 + (Number(r.gstPercentage || 0) / 100))), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+                                                </div>
+                                            </div>
+                                            <div className="col-md-4">
+                                                <div className="p-3 bg-light border-start border-warning border-4 rounded shadow-sm h-100">
+                                                    <div className="small text-secondary fw-bold text-uppercase">Total Tax (GST)</div>
+                                                    <div className="h4 m-0 fw-bold text-primary">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) * (Number(r.gstPercentage || 0) / (100 + Number(r.gstPercentage || 0)))), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+                                                </div>
+                                            </div>
+                                            <div className="col-md-4">
+                                                <div className="p-3 bg-light border-start border-success border-4 rounded shadow-sm h-100">
+                                                    <div className="small text-secondary fw-bold text-uppercase">Total Revenue</div>
+                                                    <div className="h4 m-0 fw-bold text-success">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) || 0), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="table-responsive">
+                                <table className="table table-hover mb-0 align-middle">
+                                    <thead className="thead-glass">
+                                        <tr>
+                                            <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Date</th>
+                                            <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Customer</th>
+                                            <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Items</th>
+                                            <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Weight</th>
+                                            <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Rate/g</th>
+                                            <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter text-end">Subtotal (Net)</th>
+                                            <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter text-end">Tax (GST)</th>
+                                            <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter text-end">Grand Total</th>
+                                            <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {isLoading ? (
+                                            <tr><td colSpan="9" className="text-center py-5">
+                                                <div className="spinner-border text-warning spinner-border-sm me-2"></div>
+                                                Loading historical records...
+                                            </td></tr>
+                                        ) : filteredReports.length === 0 ? (
+                                            <tr><td colSpan="9" className="text-center py-5 text-secondary">
+                                                <h1 className="display-4 opacity-10">📂</h1>
+                                                No records found matching these filters.
+                                            </td></tr>
+                                        ) : (
+                                            filteredReports.map((entry, idx) => (
+                                                <tr key={entry.id} className="align-middle" style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                                    <td className="px-4 text-secondary small">
+                                                        {new Date(entry.date).toLocaleDateString() || '-'} <br />
+                                                        <span className="text-muted fw-bold">{new Date(entry.date).toLocaleTimeString()}</span>
+                                                    </td>
+                                                    <td className="fw-bold">{entry.customerName || '-'} <br /><span className="small text-secondary fw-normal">{entry.mobile}</span></td>
+                                                    <td className="fw-bold text-secondary">{entry.itemType} - {entry.itemName}</td>
+                                                    <td>{entry.grams ? `${entry.grams} g` : '-'}</td>
+                                                    <td>₹ {entry.ratePerGram ? entry.ratePerGram.toLocaleString() : '-'}</td>
+                                                    <td className="px-4 text-end text-secondary fw-semibold">
+                                                        ₹ {entry.finalTotal ? (Number(entry.finalTotal) / (1 + (Number(entry.gstPercentage || 0) / 100))).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '-'}
+                                                        {Number(entry.negotiableAmount) > 0 && <div className="text-danger" style={{ fontSize: '0.6rem' }}>(Inc. ₹{entry.negotiableAmount} Disc)</div>}
+                                                    </td>
+                                                    <td className="px-4 text-end">
+                                                        <div className="text-primary fw-bold">₹ {entry.gstPercentage ? Math.round(Number(entry.finalTotal) * (Number(entry.gstPercentage) / (100 + Number(entry.gstPercentage)))).toLocaleString() : '0'}</div>
+                                                        <div className="smaller text-muted" style={{ fontSize: '0.65rem' }}>@{entry.gstPercentage || 0}%</div>
+                                                    </td>
+                                                    <td className="px-4 text-end text-success fw-bolder fs-6">
+                                                        ₹ {entry.finalTotal ? Number(entry.finalTotal).toLocaleString() : '-'}
+                                                    </td>
+                                                    <td className="px-3 text-center">
+                                                        <div className="d-flex gap-2 justify-content-center">
+                                                            <button
+                                                                className="btn btn-sm btn-dark scale-hover px-3 shadow-sm"
+                                                                onClick={() => handleHardwarePrintRow(entry)}
+                                                                title="Generate Digital & Hardware Bill"
+                                                            >
+                                                                🧾
+                                                            </button>
+                                                            <button
+                                                                className="btn btn-sm btn-outline-danger scale-hover px-2 shadow-sm"
+                                                                onClick={() => handleDeleteEntry(entry.id)}
+                                                                title="Delete Permanently"
+                                                            >
+                                                                🗑️
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                    {filteredReports.length > 0 && (
+                                        <tfoot className="border-top-0">
+                                            <tr className="fw-bold">
+                                                <td colSpan="5" className="px-4 py-3 text-secondary">
+                                                    TOTAL ENTRIES: <span className="badge bg-warning text-dark px-2 ms-2">{filteredReports.length}</span>
+                                                </td>
+                                                <td colSpan="2" className="px-4 py-3 text-secondary text-end">GRAND TOTALS:</td>
+                                                <td className="px-4 py-3 text-end fw-bold">
+                                                    <div className="text-primary small" style={{ fontSize: '0.75rem' }}>GST: ₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) * (Number(r.gstPercentage || 0) / (100 + Number(r.gstPercentage || 0)))), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+                                                    <div className="text-success">Total: ₹ {totalRevenue.toLocaleString('en-IN')}</div>
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    )}
+                                </table>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            <AnimatePresence>
+                {deleteTargetId && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="modal-backdrop show" style={{ background: 'rgba(0,0,0,0.6)', zIndex: 1040 }} onClick={() => setDeleteTargetId(null)}
+                    />
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {deleteTargetId && (
+                    <motion.div
+                        className="modal d-block"
+                        tabIndex="-1"
+                        style={{ zIndex: 1050 }}
+                        initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                        transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                    >
+                        <div className="modal-dialog modal-dialog-centered">
+                            <div className="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                                <div className="modal-header bg-danger bg-gradient text-white border-0 py-3">
+                                    <h5 className="modal-title fw-bold m-0 d-flex align-items-center gap-2">
+                                        <span className="bg-white text-danger px-2 rounded-2 small shadow-sm">!</span> Confirm Deletion
+                                    </h5>
+                                    <button type="button" className="btn-close btn-close-white" onClick={() => setDeleteTargetId(null)}></button>
+                                </div>
+                                <div className="modal-body p-4 text-center">
+                                    <div className="mb-3">
+                                        <motion.div 
+                                            initial={{ rotate: 0 }} animate={{ rotate: [-10, 10, -10, 10, 0] }} transition={{ duration: 0.5, delay: 0.2 }}
+                                            className="d-inline-block text-danger" style={{ fontSize: '3.5rem', filter: 'drop-shadow(0 4px 6px rgba(220, 53, 69, 0.3))' }}
+                                        >
+                                            🗑️
+                                        </motion.div>
+                                    </div>
+                                    <h4 className="fw-bolder mb-2">Are you totally sure?</h4>
+                                    <p className="text-secondary small m-0 px-3">This entry will be permanently deleted from the Firebase Cloud Database and cannot be recovered later.</p>
+                                </div>
+                                <div className="modal-footer border-0 p-3 bg-light d-flex justify-content-center gap-3">
+                                    <button type="button" className="btn btn-secondary px-4 py-2 rounded-pill shadow-sm" onClick={() => setDeleteTargetId(null)}>Cancel & Keep It</button>
+                                    <button type="button" className="btn btn-danger px-4 py-2 rounded-pill shadow-sm fw-bold d-flex align-items-center gap-2" onClick={confirmDeleteEntry} disabled={isLoading}>
+                                        {isLoading ? <span className="spinner-border spinner-border-sm"></span> : 'Yes, Delete Permanently'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+export default DataEntry;

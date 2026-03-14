@@ -1,0 +1,71 @@
+
+D:\projects\jewellry shop 2\frontend\src\App.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+D:\projects\jewellry shop 2\frontend\src\components\AiWidget.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+D:\projects\jewellry shop 2\frontend\src\components\Sidebar.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+D:\projects\jewellry shop 2\frontend\src\components\SplashLoading.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+D:\projects\jewellry shop 2\frontend\src\context\AuthContext.jsx
+   1:8   warning  'React' is defined but never used                no-unused-vars
+  17:21  warning  'setLoading' is assigned a value but never used  no-unused-vars
+
+D:\projects\jewellry shop 2\frontend\src\pages\Billing.jsx
+    1:8    warning  'React' is defined but never used                                no-unused-vars
+   91:17   warning  Unexpected console statement                                     no-console
+  191:25   warning  Unexpected console statement                                     no-console
+  206:17   warning  Unexpected console statement                                     no-console
+  356:92   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  356:103  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+D:\projects\jewellry shop 2\frontend\src\pages\Dashboard.jsx
+    1:8   warning  'React' is defined but never used                                no-unused-vars
+    4:41  warning  'CartesianGrid' is defined but never used                        no-unused-vars
+  101:70  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+D:\projects\jewellry shop 2\frontend\src\pages\DataEntry.jsx
+    1:8   warning  'React' is defined but never used  no-unused-vars
+  188:13  warning  Unexpected console statement       no-console
+  199:13  warning  Unexpected console statement       no-console
+  227:21  warning  Unexpected console statement       no-console
+  261:13  warning  Unexpected console statement       no-console
+
+D:\projects\jewellry shop 2\frontend\src\pages\Inventory.jsx
+   1:8   warning  'React' is defined but never used            no-unused-vars
+  16:67  warning  'errors' is assigned a value but never used  no-unused-vars
+
+D:\projects\jewellry shop 2\frontend\src\pages\Login.jsx
+   1:8   warning  'React' is defined but never used                                no-unused-vars
+  29:21  warning  Unexpected console statement                                     no-console
+  83:32  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+D:\projects\jewellry shop 2\frontend\src\pages\Settings.jsx
+    1:8    warning  'React' is defined but never used                                no-unused-vars
+    9:19   warning  'verifyOtp' is assigned a value but never used                   no-unused-vars
+   71:21   warning  Unexpected console statement                                     no-console
+  118:13   warning  Unexpected console statement                                     no-console
+  148:13   warning  Unexpected console statement                                     no-console
+  194:13   warning  Unexpected console statement                                     no-console
+  387:95   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  387:146  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+D:\projects\jewellry shop 2\frontend\src\pages\Signup.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+D:\projects\jewellry shop 2\frontend\src\pages\VerifyOTP.jsx
+   1:8   warning  'React' is defined but never used  no-unused-vars
+  85:13  warning  Unexpected console statement       no-console
+
+D:\projects\jewellry shop 2\frontend\src\utils\firebase.js
+  23:26  warning  'response' is defined but never used  no-unused-vars
+
+D:\projects\jewellry shop 2\frontend\src\utils\printerUtils.js
+  105:9  warning  Unexpected console statement  no-console
+
+✖ 38 problems (6 errors, 32 warnings)
+
