@@ -60,7 +60,11 @@ const VerifyOTP = () => {
                 }
             } else {
                 const res = await login(loginIdentifier, password);
-                toast.success(res.message || 'New OTP Sent');
+                if (res.isDevMode) {
+                    toast.info('Developer Mode: New OTP printed to server terminal', { autoClose: 5000 });
+                } else {
+                    toast.success(res.message || 'New OTP Sent');
+                }
                 
                 // User requirement: Automatically clear entered data on resend
                 setValue('otp', '');

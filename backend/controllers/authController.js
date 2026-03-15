@@ -7,6 +7,10 @@ const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
+const isPlaceholderConfig = (user, pass) => {
+    return !user || !pass || user.includes('your_email') || pass.includes('your_app_password');
+};
+
 const sendEmail = async (options) => {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -193,14 +197,24 @@ const loginUser = async (req, res) => {
 
             console.log(`✉️ EMAIL OTP FOR ${cleanIdentifier}: ${generatedOtp}`);
 
-            const result = await sendEmail({
-                email: cleanIdentifier,
-                subject: 'Gold Desk - Your Login OTP',
-                message: `Your login OTP is ${generatedOtp}. It is valid for 90 seconds.`
-            });
+            const isDevMode = isPlaceholderConfig(process.env.EMAIL_USER, process.env.EMAIL_PASS);
+            let emailSent = false;
+            let emailError = null;
 
-            if (!result.success) {
-                console.error(`[DEV ERROR] Email delivery failed: ${result.error}`);
+            if (!isDevMode) {
+                const result = await sendEmail({
+                    email: cleanIdentifier,
+                    subject: 'Gold Desk - Your Login OTP',
+                    message: `Your login OTP is ${generatedOtp}. It is valid for 90 seconds.`
+                });
+                emailSent = result.success;
+                emailError = result.error;
+            } else {
+                console.log(`\n[SMART DEV MODE] Bypassing email for ${cleanIdentifier}. OTP: ${generatedOtp}\n`);
+            }
+
+            if (!isDevMode && !emailSent) {
+                console.error(`[DEV ERROR] Email delivery failed: ${emailError}`);
                 console.log(`\n---------------------------------------------------------`);
                 console.log(`[DEV ONLY] OTP for ${cleanIdentifier}: ${generatedOtp}`);
                 console.log(`---------------------------------------------------------\n`);
@@ -210,9 +224,10 @@ const loginUser = async (req, res) => {
             }
 
             return res.json({
-                message: 'OTP sent via Email',
+                message: isDevMode ? 'Developer Mode: OTP sent to terminal' : 'OTP sent via Email',
                 authMethod: 'email',
-                loginIdentifier: cleanIdentifier
+                loginIdentifier: cleanIdentifier,
+                isDevMode
             });
         } else {
             let formattedPhone = cleanIdentifier;
@@ -351,14 +366,24 @@ const forgotPasswordRequest = async (req, res) => {
 
         console.log(`✉️ FORGOT PASSWORD OTP (Sent to ${sendToEmail}): ${generatedOtp}`);
         
-        const result = await sendEmail({
-            email: sendToEmail,
-            subject: 'Gold Desk - Password Reset OTP',
-            message: `Your OTP for resetting your Gold Desk password is ${generatedOtp}. It is valid for 90 seconds.`
-        });
+        const isDevMode = isPlaceholderConfig(process.env.EMAIL_USER, process.env.EMAIL_PASS);
+        let emailSent = false;
+        let emailError = null;
 
-        if (!result.success) {
-            console.error(`[DEV ERROR] Recovery email delivery failed: ${result.error}`);
+        if (!isDevMode) {
+            const result = await sendEmail({
+                email: sendToEmail,
+                subject: 'Gold Desk - Password Reset OTP',
+                message: `Your OTP for resetting your Gold Desk password is ${generatedOtp}. It is valid for 90 seconds.`
+            });
+            emailSent = result.success;
+            emailError = result.error;
+        } else {
+            console.log(`\n[SMART DEV MODE] Bypassing recovery email for ${sendToEmail}. OTP: ${generatedOtp}\n`);
+        }
+
+        if (!isDevMode && !emailSent) {
+            console.error(`[DEV ERROR] Recovery email delivery failed: ${emailError}`);
             console.log(`\n---------------------------------------------------------`);
             console.log(`[DEV ONLY] Recovery OTP for ${sendToEmail}: ${generatedOtp}`);
             console.log(`---------------------------------------------------------\n`);
@@ -372,9 +397,10 @@ const forgotPasswordRequest = async (req, res) => {
         const maskedEmail = user.slice(0, 2) + '***@' + domain;
 
         res.json({ 
-            message: 'OTP sent to your recovery email', 
+            message: isDevMode ? 'Developer Mode: OTP sent to terminal' : 'OTP sent to your recovery email', 
             recoveryEmail: maskedEmail,
-            userId: userDoc.id // pass userId to use in reset step
+            userId: userDoc.id, // pass userId to use in reset step
+            isDevMode
         });
     } catch (error) {
         console.error("Forgot password request error:", error);

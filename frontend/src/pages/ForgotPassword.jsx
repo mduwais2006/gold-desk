@@ -35,7 +35,11 @@ const ForgotPassword = () => {
             // Clear old OTP if this is a resend
             setValue('otp', '');
 
-            toast.success('OTP sent to your recovery email!');
+            if (res.data.isDevMode) {
+                toast.info('Developer Mode: Recovery OTP sent to server terminal', { autoClose: 5000 });
+            } else {
+                toast.success('OTP sent to your recovery email!');
+            }
         } catch (error) {
             const errorMsg = error.response?.data?.message || 'Failed to find account. Check your recovery email address.';
             Swal.fire({

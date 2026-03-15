@@ -43,7 +43,11 @@ const Login = () => {
                     if (window.recaptchaVerifier) { window.recaptchaVerifier.clear(); window.recaptchaVerifier = null; }
                 }
             } else {
-                toast.success(res.message || 'OTP Sent');
+                if (res.isDevMode) {
+                    toast.info('Developer Mode: OTP sent to server terminal', { autoClose: 5000 });
+                } else {
+                    toast.success(res.message || 'OTP Sent');
+                }
                 navigate('/verify-otp', { state: { loginIdentifier: res.loginIdentifier, authMethod: 'email', password: data.password } });
             }
 
