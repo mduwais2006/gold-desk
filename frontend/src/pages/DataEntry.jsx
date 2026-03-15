@@ -584,34 +584,66 @@ const DataEntry = () => {
                                     <div className="d-flex justify-content-between align-items-center w-100 flex-wrap gap-2">
                                         <h5 className="fw-bold mb-0">Filtered Jewelry Records</h5>
                                         
-                                        <div className="d-flex flex-wrap gap-2">
-                                            <input type="date" className="control-small rounded border px-2 text-secondary" style={{ fontSize: '0.8rem' }}
-                                                value={filters.searchDate} onChange={e => setFilters({ ...filters, searchDate: e.target.value })} />
-
-                                            <input type="time" step="1" className="control-small rounded border px-2 text-secondary" style={{ fontSize: '0.8rem' }}
-                                                value={filters.searchTime} onChange={e => setFilters({ ...filters, searchTime: e.target.value })} title="Filter down to specific Hours, Mins, Secs" />
-
-                                            <select className="control-small rounded border px-2 text-secondary" style={{ fontSize: '0.8rem' }}
-                                                value={filters.searchMonth} onChange={e => setFilters({ ...filters, searchMonth: e.target.value })}>
-                                                {months.map(m => <option key={m.val} value={m.val}>{m.label}</option>)}
-                                            </select>
-
-                                            <select className="control-small rounded border px-2 text-secondary" style={{ fontSize: '0.8rem' }}
-                                                value={filters.searchYear} onChange={e => setFilters({ ...filters, searchYear: e.target.value })}>
-                                                {years.map(y => <option key={y} value={y}>{y}</option>)}
-                                            </select>
-
-                                            <button className="btn btn-sm btn-outline-warning small" onClick={() => setFilters({ searchDate: '', searchTime: '', searchMonth: '', searchYear: currentYear.toString() })}>Clear</button>
-
-                                            <div className="btn-group shadow-sm">
-                                                <button className="btn btn-sm btn-success small d-flex align-items-center gap-1" onClick={handleExportExcelLocal} disabled={filteredReports.length === 0} style={{ borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)' }}>
-                                                    <i className="bi bi-file-earmark-excel"></i> Excel
-                                                </button>
-                                                <button className="btn btn-sm btn-danger small d-flex align-items-center gap-1" onClick={handleExportPdfLocal} disabled={filteredReports.length === 0} style={{ borderRadius: '0 var(--radius-sm) var(--radius-sm) 0' }}>
-                                                    <i className="bi bi-file-earmark-pdf"></i> PDF
-                                                </button>
+                                    <div className="p-3 bg-light-subtle rounded-4 mb-4 border border-light-subtle">
+                                        <div className="row g-3">
+                                            <div className="col-md-3">
+                                                <label className="form-label small fw-bold text-secondary">📅 Exact Date Search</label>
+                                                <input type="date" className="form-control form-control-glass py-2" style={{ fontSize: '0.85rem' }}
+                                                    value={filters.searchDate} onChange={e => setFilters({ ...filters, searchDate: e.target.value })} />
+                                            </div>
+                                            <div className="col-md-3">
+                                                <label className="form-label small fw-bold text-secondary">🕒 Filter by Time</label>
+                                                <input type="time" step="1" className="form-control form-control-glass py-2" style={{ fontSize: '0.85rem' }}
+                                                    value={filters.searchTime} onChange={e => setFilters({ ...filters, searchTime: e.target.value })} title="Filter down to specific Hours, Mins, Secs" />
+                                            </div>
+                                            <div className="col-md-3">
+                                                <label className="form-label small fw-bold text-secondary">🗓️ Historical Month</label>
+                                                <select className="form-select form-control-glass py-2" style={{ fontSize: '0.85rem' }}
+                                                    value={filters.searchMonth} onChange={e => setFilters({ ...filters, searchMonth: e.target.value })}>
+                                                    <option value="">Full Year</option>
+                                                    {months.map(m => m.val && <option key={m.val} value={m.val}>{m.label}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="col-md-3">
+                                                <label className="form-label small fw-bold text-secondary">📉 Select Year</label>
+                                                <div className="d-flex gap-2">
+                                                    <select className="form-select form-control-glass py-2" style={{ fontSize: '0.85rem' }}
+                                                        value={filters.searchYear} onChange={e => setFilters({ ...filters, searchYear: e.target.value })}>
+                                                        {years.map(y => <option key={y} value={y}>{y}</option>)}
+                                                    </select>
+                                                    <button className="btn btn-outline-danger px-3" onClick={() => setFilters({ searchDate: '', searchTime: '', searchMonth: '', searchYear: currentYear.toString() })} title="Reset All Filters">
+                                                        <i className="bi bi-x-circle"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                                        <div className="flex-grow-1" style={{ maxWidth: '400px' }}>
+                                            <div className="input-group">
+                                                <span className="input-group-text bg-transparent border-end-0 text-secondary pe-0">
+                                                    <i className="bi bi-search"></i>
+                                                </span>
+                                                <input 
+                                                    type="text" 
+                                                    className="form-control form-control-glass border-start-0 ps-2" 
+                                                    placeholder="Search customer name or mobile..." 
+                                                    style={{ fontSize: '0.9rem' }}
+                                                />
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="d-flex gap-2">
+                                            <button className="btn btn-advanced py-2 px-4 shadow-sm" onClick={handleExportExcelLocal} disabled={filteredReports.length === 0}>
+                                                <i className="bi bi-file-earmark-excel me-2"></i> Export to Excel
+                                            </button>
+                                            <button className="btn btn-outline-danger py-2 px-4 shadow-sm rounded-pill fw-bold" onClick={handleExportPdfLocal} disabled={filteredReports.length === 0}>
+                                                <i className="bi bi-file-earmark-pdf me-2"></i> Export PDF
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     </div>
                                     
                                     {filteredReports.length > 0 && (

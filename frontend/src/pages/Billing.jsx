@@ -316,7 +316,7 @@ const Billing = () => {
                     >
                         <div className="position-absolute top-0 start-0 w-100 bg-warning" style={{ height: '6px' }}></div>
                         <h1 className="display-1 mb-4" style={{ filter: 'drop-shadow(0px 10px 15px rgba(212,175,55,0.3))' }}>📠🔌</h1>
-                        <h3 className="fw-900 mb-3 text-uppercase tracking-tighter text-black-force">Hardware Lock</h3>
+                        <h3 className="fw-900 mb-3 text-uppercase tracking-tighter text-white" style={{ textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>Hardware Lock</h3>
                         <p className="text-secondary mb-4 fs-6 fw-bold">
                             To maintain premium security and synchronous performance, the Billing Engine is locked until your <b className="text-accent-primary">Physical POS Printer</b> is officially connected.
                         </p>

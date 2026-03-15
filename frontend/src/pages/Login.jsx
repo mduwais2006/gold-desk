@@ -89,9 +89,11 @@ const Login = () => {
         <div className="auth-wrapper">
             <div className="auth-card glass-panel animate-fade-in">
                 <div className="text-center mb-4">
+                    <img src="/logo.png" alt="Gold Desk Logo" className="logo-img mb-3 mt-1" style={{ width: '80px', height: '80px', filter: 'drop-shadow(0 0 10px rgba(212,175,55,0.3))' }} />
                     <h2 className="fw-bold mb-1" style={{ color: 'var(--accent-primary)' }}>Gold Desk</h2>
                     <p className="text-secondary small">Secure Access to Your Business</p>
                 </div>
+
 
                 <form onSubmit={handleSubmit(onSubmit)} className="d-flex flex-column gap-3">
                     <div>
