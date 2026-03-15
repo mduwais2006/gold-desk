@@ -36,9 +36,20 @@ const ForgotPassword = () => {
             setValue('otp', '');
 
             if (res.data.isDevMode) {
-                toast.info('Developer Mode: Recovery OTP sent to server terminal', { autoClose: 5000 });
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Smart Dev Mode',
+                    text: 'Recovery OTP sent to server terminal. Please check the Gold Block.',
+                    confirmButtonColor: 'var(--accent-primary)'
+                });
             } else {
-                toast.success('OTP sent to your recovery email!');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'OTP Sent Successfully',
+                    text: 'Please check your recovery email for your access code.',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
             }
         } catch (error) {
             const errorMsg = error.response?.data?.message || 'Failed to find account. Check your recovery email address.';

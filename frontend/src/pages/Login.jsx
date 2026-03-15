@@ -30,7 +30,17 @@ const Login = () => {
                 try {
                     const confirmationResult = await signInWithPhoneNumber(auth, res.formattedPhone, recaptchaVerifier);
                     window.confirmationResult = confirmationResult;
-                    toast.success('SMS Sent to your Mobile!');
+                    
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'OTP Sent Successfully',
+                        text: 'A 6-digit code has been sent to your mobile phone via SMS.',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        position: 'top-end',
+                        toast: true
+                    });
+
                     navigate('/verify-otp', { state: { loginIdentifier: data.loginIdentifier, authMethod: res.authMethod, formattedPhone: res.formattedPhone, password: data.password } });
                 } catch (ferr) {
                     console.error("Firebase Auth Error", ferr);
@@ -44,9 +54,20 @@ const Login = () => {
                 }
             } else {
                 if (res.isDevMode) {
-                    toast.info('Developer Mode: OTP sent to server terminal', { autoClose: 5000 });
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Smart Dev Mode',
+                        text: 'Your OTP has been sent to the server terminal. Please check the Gold Block.',
+                        confirmButtonColor: 'var(--accent-primary)'
+                    });
                 } else {
-                    toast.success(res.message || 'OTP Sent');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'OTP Sent Successfully',
+                        text: 'Please check your email inbox for your 6-digit access code.',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
                 }
                 navigate('/verify-otp', { state: { loginIdentifier: res.loginIdentifier, authMethod: 'email', password: data.password } });
             }
