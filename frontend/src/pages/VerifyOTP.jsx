@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 import { auth, setupRecaptcha, signInWithPhoneNumber } from '../utils/firebase';
 
 const VerifyOTP = () => {
@@ -33,12 +34,21 @@ const VerifyOTP = () => {
         return () => clearInterval(interval);
     }, [timer]);
 
+    useEffect(() => {
+        if (authMethod === 'firebase_phone') {
+            // Speed up resend by pre-initializing the invisible recaptcha
+            setTimeout(() => {
+                setupRecaptcha('resend-captcha');
+            }, 500); // slight delay to ensure DOM is ready
+        }
+    }, [authMethod]);
+
     const handleResend = async () => {
         try {
             setIsLoading(true);
             if (authMethod === 'firebase_phone') {
                 toast.info('Sending new SMS...');
-                const recaptchaVerifier = setupRecaptcha('resend-captcha');
+                const recaptchaVerifier = window.recaptchaVerifier || setupRecaptcha('resend-captcha');
                 try {
                     const result = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifier);
                     window.confirmationResult = result;
@@ -62,7 +72,12 @@ const VerifyOTP = () => {
 
     const onSubmit = async (data) => {
         if (timer === 0) {
-            toast.error('OTP Expired. Please request a new one.');
+            Swal.fire({
+                icon: 'warning',
+                title: 'OTP Expired',
+                text: 'Your current OTP has expired. Please request a new one.',
+                confirmButtonColor: 'var(--accent-primary)'
+            });
             return;
         }
         try {
@@ -71,8 +86,15 @@ const VerifyOTP = () => {
 
             if (authMethod === 'firebase_phone') {
                 if (!window.confirmationResult) {
-                    toast.error('Session expired. Please request a new OTP.');
-                    return navigate('/login');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Session Expired',
+                        text: 'Your session has expired. Please request a new OTP.',
+                        confirmButtonColor: 'var(--accent-primary)'
+                    }).then(() => {
+                        navigate('/login');
+                    });
+                    return;
                 }
                 const result = await window.confirmationResult.confirm(data.otp);
                 firebaseToken = await result.user.getIdToken();
@@ -83,7 +105,13 @@ const VerifyOTP = () => {
             navigate('/'); // To Dashboard
         } catch (error) {
             console.error(error);
-            toast.error(error.message || error.response?.data?.message || 'Invalid or Expired OTP');
+            const errorMsg = error.message || error.response?.data?.message || 'Invalid or Expired OTP';
+            Swal.fire({
+                icon: 'error',
+                title: 'Verification Failed',
+                text: errorMsg.charAt(0).toUpperCase() + errorMsg.slice(1),
+                confirmButtonColor: 'var(--accent-primary)'
+            });
         } finally {
             setIsLoading(false);
         }
@@ -126,13 +154,12 @@ const VerifyOTP = () => {
                     </button>
 
                     {timer === 0 && (
-                        <>
-                            <div id="resend-captcha"></div>
-                            <button type="button" onClick={handleResend} className="btn-outline-gold w-100 mt-2" disabled={isLoading} style={{ background: 'transparent', border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', padding: '0.75rem', borderRadius: '8px' }}>
-                                Resend OTP
-                            </button>
-                        </>
+                        <button type="button" onClick={handleResend} className="btn-outline-gold w-100 mt-2" disabled={isLoading} style={{ background: 'transparent', border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', padding: '0.75rem', borderRadius: '8px' }}>
+                            Resend OTP
+                        </button>
                     )}
+
+                    <div id="resend-captcha" className="mt-2 text-center d-flex justify-content-center"></div>
 
                     <div className="mt-4">
                         <Link to="/login" className="small text-secondary text-decoration-none hover-accent transition">

@@ -38,6 +38,7 @@ const registerUser = async (req, res) => {
     const { name, email, password, shopName, phone } = req.body;
 
     if (!name || !phone || !password) {
+        console.log("Register 400 Error: Missing required fields");
         return res.status(400).json({ message: 'Please add all required fields (name, phone, password)' });
     }
 
@@ -46,12 +47,22 @@ const registerUser = async (req, res) => {
         const snapshot = await usersRef.where('phone', '==', phone).get();
 
         if (!snapshot.empty) {
+            console.log("Register 400 Error: Phone number already exists ->", phone);
             return res.status(400).json({ message: 'User with this phone number already exists' });
+        }
+
+        const cleanEmail = email ? email.trim().toLowerCase() : '';
+
+        if (cleanEmail) {
+            const emailSnap = await usersRef.where('email', '==', cleanEmail).get();
+            if (!emailSnap.empty) {
+                console.log("Register 400 Error: Email already exists ->", cleanEmail);
+                return res.status(400).json({ message: 'User with this email already exists' });
+            }
         }
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        const cleanEmail = email ? email.trim().toLowerCase() : '';
 
         const newUserRef = usersRef.doc();
         await newUserRef.set({

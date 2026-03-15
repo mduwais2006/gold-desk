@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 import { auth, setupRecaptcha, signInWithPhoneNumber } from '../utils/firebase';
 
 const Login = () => {
@@ -11,6 +12,11 @@ const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
+    useEffect(() => {
+        // Pre-initialize reCAPTCHA on mount to make OTP generation instantly fast "like Google"
+        setupRecaptcha('sign-in-button');
+    }, []);
+
     const onSubmit = async (data) => {
         try {
             setIsLoading(true);
@@ -18,8 +24,9 @@ const Login = () => {
 
             if (res.authMethod === 'firebase_phone') {
                 toast.info('Sending SMS via Google Firebase...');
-                const recaptchaVerifier = setupRecaptcha('sign-in-button');
-
+                // Use the pre-initialized recaptchaVerifier, or set it up if somehow missing
+                const recaptchaVerifier = window.recaptchaVerifier || setupRecaptcha('sign-in-button');
+                                
                 try {
                     const confirmationResult = await signInWithPhoneNumber(auth, res.formattedPhone, recaptchaVerifier);
                     window.confirmationResult = confirmationResult;
@@ -27,7 +34,12 @@ const Login = () => {
                     navigate('/verify-otp', { state: { loginIdentifier: data.loginIdentifier, authMethod: res.authMethod, formattedPhone: res.formattedPhone, password: data.password } });
                 } catch (ferr) {
                     console.error("Firebase Auth Error", ferr);
-                    toast.error('Firebase SMS Failed. Usually invalid config or phone format.');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'SMS Failed',
+                        text: 'Firebase SMS Failed. Usually invalid config or phone format.',
+                        confirmButtonColor: 'var(--accent-primary)'
+                    });
                     if (window.recaptchaVerifier) { window.recaptchaVerifier.clear(); window.recaptchaVerifier = null; }
                 }
             } else {
@@ -36,7 +48,13 @@ const Login = () => {
             }
 
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Login failed');
+            const errorMessage = error.response?.data?.message || 'Login failed';
+            Swal.fire({
+                icon: 'error',
+                title: 'Access Denied',
+                text: errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1),
+                confirmButtonColor: 'var(--accent-primary)'
+            });
         } finally {
             setIsLoading(false);
         }
