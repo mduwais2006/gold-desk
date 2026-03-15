@@ -58,7 +58,7 @@ const Signup = () => {
 
     return (
         <div className="auth-wrapper py-5">
-            <div className="auth-card glass-panel animate-fade-in my-auto py-4" style={{ maxWidth: '500px' }}>
+            <div className="auth-card glass-panel animate-fade-in my-auto py-4">
                 <div className="text-center mb-4">
                     <h2 className="fw-bold mb-1" style={{ color: 'var(--accent-primary)' }}>Create Account</h2>
                     <p className="text-secondary small">Join Gold Desk Management Portal</p>

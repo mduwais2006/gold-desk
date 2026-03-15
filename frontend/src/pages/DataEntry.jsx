@@ -87,8 +87,10 @@ const DataEntry = () => {
         searchDate: '',
         searchTime: '',
         searchMonth: '', // format "01", "02", etc
-        searchYear: new Date().getFullYear().toString()
+        searchYear: new Date().getFullYear().toString(),
+        searchQuery: ''  // live search by customer name / mobile
     });
+
 
     useEffect(() => {
         if (activeTab === 'reports') {
@@ -226,8 +228,13 @@ const DataEntry = () => {
         const matchesTime = !filters.searchTime || itemTime.startsWith(filters.searchTime);
         const matchesMonth = !filters.searchMonth || itemMonth === filters.searchMonth;
         const matchesYear = !filters.searchYear || itemYear === filters.searchYear;
+        const matchesQuery = !filters.searchQuery || [
+            item.customerName || '',
+            item.mobile || ''
+        ].some(field => field.toLowerCase().includes(filters.searchQuery.toLowerCase()));
 
-        return matchesDate && matchesTime && matchesMonth && matchesYear;
+        return matchesDate && matchesTime && matchesMonth && matchesYear && matchesQuery;
+
     });
     
     // Calculate total revenue for the filtered set
@@ -646,7 +653,7 @@ const DataEntry = () => {
                                             <div className="col-12 col-md-2">
                                                 <button
                                                     className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold"
-                                                    onClick={() => setFilters({ searchDate: '', searchTime: '', searchMonth: '', searchYear: currentYear.toString() })}
+                                                    onClick={() => setFilters({ searchDate: '', searchTime: '', searchMonth: '', searchYear: currentYear.toString(), searchQuery: '' })}
                                                     title="Reset All Filters"
                                                 >
                                                     <i className="bi bi-x-circle"></i> Clear Filters
@@ -666,14 +673,19 @@ const DataEntry = () => {
                                                 className="form-control form-control-glass"
                                                 placeholder="Search by customer name or mobile..."
                                                 style={{ borderLeft: 'none' }}
+                                                value={filters.searchQuery}
+                                                onChange={e => setFilters({ ...filters, searchQuery: e.target.value })}
+                                                autoComplete="off"
                                             />
+
                                         </div>
 
                                         <div className="d-flex gap-2 ms-auto">
                                             <button
-                                                className="btn btn-advanced px-4 d-flex align-items-center gap-2"
+                                                className="btn btn-success px-4 fw-bold d-flex align-items-center gap-2 shadow-sm"
                                                 onClick={handleExportExcelLocal}
                                                 disabled={filteredReports.length === 0}
+                                                style={{ borderRadius: 'var(--radius-md)' }}
                                             >
                                                 <i className="bi bi-file-earmark-excel"></i> Excel
                                             </button>
