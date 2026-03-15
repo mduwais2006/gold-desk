@@ -4,3 +4,7 @@ dist/
 build/
 .DS_Store
 *.log
+serviceAccountKey.json
+*.err
+tests/demo_*
+backend/test_login.js
