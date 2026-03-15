@@ -576,95 +576,136 @@ const DataEntry = () => {
                             exit={{ opacity: 0, y: 20 }}
                             className="glass-panel p-0 border-0 overflow-hidden shadow-lg"
                         >
-                            <div className="p-4 border-bottom header-glass d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            <div className="p-4 border-bottom header-glass">
                                 <div className="w-100">
-                                    <div className="alert border-0 py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2" style={{ background: 'rgba(234,179,8,0.08)', color: 'var(--text-secondary)', borderLeft: '4px solid var(--accent-primary) !important' }}>
+
+                                    {/* Data Policy Notice */}
+                                    <div className="alert border-0 py-2 px-3 small rounded-3 mb-4 d-flex align-items-center gap-2" style={{ background: 'rgba(234,179,8,0.08)', color: 'var(--text-secondary)', borderLeft: '4px solid var(--accent-primary)' }}>
                                         <span>📊 <strong>Report Data Policy:</strong> To maintain peak performance, the section displays transactions from the <strong>last 6 months only</strong>. Please export your reports month-wise for permanent offline storage.</span>
                                     </div>
-                                    <div className="d-flex justify-content-between align-items-center w-100 flex-wrap gap-2">
-                                        <h5 className="fw-bold mb-0">Filtered Jewelry Records</h5>
-                                        
-                                    <div className="p-3 bg-light-subtle rounded-4 mb-4 border border-light-subtle">
-                                        <div className="row g-3">
-                                            <div className="col-md-3">
-                                                <label className="form-label small fw-bold text-secondary">📅 Exact Date Search</label>
-                                                <input type="date" className="form-control form-control-glass py-2" style={{ fontSize: '0.85rem' }}
-                                                    value={filters.searchDate} onChange={e => setFilters({ ...filters, searchDate: e.target.value })} />
+
+                                    {/* Title */}
+                                    <h5 className="fw-bold mb-3">🗂️ Filter Jewelry Records</h5>
+
+                                    {/* Filter Grid */}
+                                    <div className="p-3 rounded-4 mb-4" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                                        <div className="row g-3 align-items-end">
+                                            <div className="col-6 col-md-3">
+                                                <label className="form-label small fw-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                                                    📅 Exact Date
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    className="form-control form-control-glass"
+                                                    value={filters.searchDate}
+                                                    onChange={e => setFilters({ ...filters, searchDate: e.target.value })}
+                                                />
                                             </div>
-                                            <div className="col-md-3">
-                                                <label className="form-label small fw-bold text-secondary">🕒 Filter by Time</label>
-                                                <input type="time" step="1" className="form-control form-control-glass py-2" style={{ fontSize: '0.85rem' }}
-                                                    value={filters.searchTime} onChange={e => setFilters({ ...filters, searchTime: e.target.value })} title="Filter down to specific Hours, Mins, Secs" />
+
+                                            <div className="col-6 col-md-3">
+                                                <label className="form-label small fw-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                                                    🕒 Filter by Time
+                                                </label>
+                                                <input
+                                                    type="time"
+                                                    step="1"
+                                                    className="form-control form-control-glass"
+                                                    value={filters.searchTime}
+                                                    onChange={e => setFilters({ ...filters, searchTime: e.target.value })}
+                                                    title="Filter down to exact Hour / Minute / Second"
+                                                />
                                             </div>
-                                            <div className="col-md-3">
-                                                <label className="form-label small fw-bold text-secondary">🗓️ Historical Month</label>
-                                                <select className="form-select form-control-glass py-2" style={{ fontSize: '0.85rem' }}
-                                                    value={filters.searchMonth} onChange={e => setFilters({ ...filters, searchMonth: e.target.value })}>
-                                                    <option value="">Full Year</option>
+
+                                            <div className="col-6 col-md-2">
+                                                <label className="form-label small fw-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                                                    🗓️ Month
+                                                </label>
+                                                <select
+                                                    className="form-select form-control-glass"
+                                                    value={filters.searchMonth}
+                                                    onChange={e => setFilters({ ...filters, searchMonth: e.target.value })}
+                                                >
+                                                    <option value="">All Months</option>
                                                     {months.map(m => m.val && <option key={m.val} value={m.val}>{m.label}</option>)}
                                                 </select>
                                             </div>
-                                            <div className="col-md-3">
-                                                <label className="form-label small fw-bold text-secondary">📉 Select Year</label>
-                                                <div className="d-flex gap-2">
-                                                    <select className="form-select form-control-glass py-2" style={{ fontSize: '0.85rem' }}
-                                                        value={filters.searchYear} onChange={e => setFilters({ ...filters, searchYear: e.target.value })}>
-                                                        {years.map(y => <option key={y} value={y}>{y}</option>)}
-                                                    </select>
-                                                    <button className="btn btn-outline-danger px-3" onClick={() => setFilters({ searchDate: '', searchTime: '', searchMonth: '', searchYear: currentYear.toString() })} title="Reset All Filters">
-                                                        <i className="bi bi-x-circle"></i>
-                                                    </button>
-                                                </div>
+
+                                            <div className="col-6 col-md-2">
+                                                <label className="form-label small fw-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                                                    📆 Year
+                                                </label>
+                                                <select
+                                                    className="form-select form-control-glass"
+                                                    value={filters.searchYear}
+                                                    onChange={e => setFilters({ ...filters, searchYear: e.target.value })}
+                                                >
+                                                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                                                </select>
+                                            </div>
+
+                                            <div className="col-12 col-md-2">
+                                                <button
+                                                    className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+                                                    onClick={() => setFilters({ searchDate: '', searchTime: '', searchMonth: '', searchYear: currentYear.toString() })}
+                                                    title="Reset All Filters"
+                                                >
+                                                    <i className="bi bi-x-circle"></i> Clear Filters
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                                        <div className="flex-grow-1" style={{ maxWidth: '400px' }}>
-                                            <div className="input-group">
-                                                <span className="input-group-text bg-transparent border-end-0 text-secondary pe-0">
-                                                    <i className="bi bi-search"></i>
-                                                </span>
-                                                <input 
-                                                    type="text" 
-                                                    className="form-control form-control-glass border-start-0 ps-2" 
-                                                    placeholder="Search customer name or mobile..." 
-                                                    style={{ fontSize: '0.9rem' }}
-                                                />
-                                            </div>
+                                    {/* Search + Export Row */}
+                                    <div className="d-flex flex-wrap align-items-center gap-3">
+                                        <div className="input-group flex-grow-1" style={{ maxWidth: '420px' }}>
+                                            <span className="input-group-text bg-transparent" style={{ border: '1px solid var(--border-color)', borderRight: 'none' }}>
+                                                <i className="bi bi-search text-secondary"></i>
+                                            </span>
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-glass"
+                                                placeholder="Search by customer name or mobile..."
+                                                style={{ borderLeft: 'none' }}
+                                            />
                                         </div>
-                                        
-                                        <div className="d-flex gap-2">
-                                            <button className="btn btn-advanced py-2 px-4 shadow-sm" onClick={handleExportExcelLocal} disabled={filteredReports.length === 0}>
-                                                <i className="bi bi-file-earmark-excel me-2"></i> Export to Excel
+
+                                        <div className="d-flex gap-2 ms-auto">
+                                            <button
+                                                className="btn btn-advanced px-4 d-flex align-items-center gap-2"
+                                                onClick={handleExportExcelLocal}
+                                                disabled={filteredReports.length === 0}
+                                            >
+                                                <i className="bi bi-file-earmark-excel"></i> Excel
                                             </button>
-                                            <button className="btn btn-outline-danger py-2 px-4 shadow-sm rounded-pill fw-bold" onClick={handleExportPdfLocal} disabled={filteredReports.length === 0}>
-                                                <i className="bi bi-file-earmark-pdf me-2"></i> Export PDF
+                                            <button
+                                                className="btn btn-outline-danger px-4 fw-bold rounded-pill d-flex align-items-center gap-2"
+                                                onClick={handleExportPdfLocal}
+                                                disabled={filteredReports.length === 0}
+                                            >
+                                                <i className="bi bi-file-earmark-pdf"></i> PDF
                                             </button>
                                         </div>
                                     </div>
-
-                                    </div>
-                                    
-                                    {filteredReports.length > 0 && (
-                                        <div className="stat-grid mt-3 g-3">
-                                            <div className="p-3 bg-light border-start border-primary border-4 rounded shadow-sm">
-                                                <div className="small text-secondary fw-bold text-uppercase">Untaxed Subtotal</div>
-                                                <div className="h4 m-0 fw-600">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) / (1 + (Number(r.gstPercentage || 0) / 100))), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
-                                            </div>
-                                            <div className="p-3 bg-light border-start border-warning border-4 rounded shadow-sm">
-                                                <div className="small text-secondary fw-bold text-uppercase">Total Tax (GST)</div>
-                                                <div className="h4 m-0 fw-600 text-primary">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) * (Number(r.gstPercentage || 0) / (100 + Number(r.gstPercentage || 0)))), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
-                                            </div>
-                                            <div className="p-3 bg-light border-start border-success border-4 rounded shadow-sm">
-                                                <div className="small text-secondary fw-bold text-uppercase">Total Revenue</div>
-                                                <div className="h4 m-0 fw-600 text-success">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) || 0), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
-                                            </div>
-                                        </div>
-                                    )}
-
                                 </div>
                             </div>
+
+                            {/* Summary Stats */}
+                            {filteredReports.length > 0 && (
+                                <div className="stat-grid m-4 g-3">
+                                    <div className="p-3 bg-light border-start border-primary border-4 rounded shadow-sm">
+                                        <div className="small text-secondary fw-bold text-uppercase">Untaxed Subtotal</div>
+                                        <div className="h4 m-0 fw-600">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) / (1 + (Number(r.gstPercentage || 0) / 100))), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+                                    </div>
+                                    <div className="p-3 bg-light border-start border-warning border-4 rounded shadow-sm">
+                                        <div className="small text-secondary fw-bold text-uppercase">Total Tax (GST)</div>
+                                        <div className="h4 m-0 fw-600 text-primary">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) * (Number(r.gstPercentage || 0) / (100 + Number(r.gstPercentage || 0)))), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+                                    </div>
+                                    <div className="p-3 bg-light border-start border-success border-4 rounded shadow-sm">
+                                        <div className="small text-secondary fw-bold text-uppercase">Total Revenue</div>
+                                        <div className="h4 m-0 fw-600 text-success">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) || 0), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="table-responsive">
                                 <table className="table table-hover mb-0 align-middle">
