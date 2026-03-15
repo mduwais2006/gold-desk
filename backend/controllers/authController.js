@@ -3,6 +3,15 @@ const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const { db, admin } = require('../config/firebase');
 
+// BLAZING FAST: Initialize Transporter once at top level
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
+});
+
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
@@ -12,14 +21,6 @@ const isPlaceholderConfig = (user, pass) => {
 };
 
 const sendEmail = async (options) => {
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
-    });
-
     const mailOptions = {
         from: `Gold Desk Premium <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
         to: options.email,
@@ -50,21 +51,22 @@ const registerUser = async (req, res) => {
 
     try {
         const usersRef = db.collection('users');
-        const snapshot = await usersRef.where('phone', '==', phone).get();
+        const cleanEmail = email ? email.trim().toLowerCase() : '';
+        
+        // BLAZING FAST: Parallel Registration Checks
+        const [phoneSnap, emailSnap] = await Promise.all([
+            usersRef.where('phone', '==', phone).get(),
+            cleanEmail ? usersRef.where('email', '==', cleanEmail).get() : Promise.resolve({ empty: true })
+        ]);
 
-        if (!snapshot.empty) {
+        if (!phoneSnap.empty) {
             console.log("Register 400 Error: Phone number already exists ->", phone);
             return res.status(400).json({ message: 'User with this phone number already exists' });
         }
 
-        const cleanEmail = email ? email.trim().toLowerCase() : '';
-
-        if (cleanEmail) {
-            const emailSnap = await usersRef.where('email', '==', cleanEmail).get();
-            if (!emailSnap.empty) {
-                console.log("Register 400 Error: Email already exists ->", cleanEmail);
-                return res.status(400).json({ message: 'User with this email already exists' });
-            }
+        if (cleanEmail && !emailSnap.empty) {
+            console.log("Register 400 Error: Email already exists ->", cleanEmail);
+            return res.status(400).json({ message: 'User with this email already exists' });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -136,15 +138,22 @@ const loginUser = async (req, res) => {
     const cleanIdentifier = (loginIdentifier || '').replace(/\s/g, '').toLowerCase();
 
     try {
-        let snapshot = await db.collection('users').where('phone', '==', cleanIdentifier).get();
+        const usersRef = db.collection('users');
 
-        if (snapshot.empty && cleanIdentifier.length === 10 && !isNaN(cleanIdentifier)) {
-            snapshot = await db.collection('users').where('phone', '==', `+91${cleanIdentifier}`).get();
-        }
+        // BLAZING FAST: Parallel Database Discovery
+        const [phoneSnap, phoneSnap91, emailSnap] = await Promise.all([
+            usersRef.where('phone', '==', cleanIdentifier).get(),
+            (cleanIdentifier.length === 10 && !isNaN(cleanIdentifier)) 
+                ? usersRef.where('phone', '==', `+91${cleanIdentifier}`).get() 
+                : Promise.resolve({ empty: true }),
+            (cleanIdentifier.includes('@') || isNaN(cleanIdentifier))
+                ? usersRef.where('email', '==', cleanIdentifier).get()
+                : Promise.resolve({ empty: true })
+        ]);
 
-        if (snapshot.empty && (cleanIdentifier.includes('@') || isNaN(cleanIdentifier))) {
-            snapshot = await db.collection('users').where('email', '==', cleanIdentifier).get();
-        }
+        let snapshot = phoneSnap;
+        if (snapshot.empty) snapshot = phoneSnap91;
+        if (snapshot.empty) snapshot = emailSnap;
 
         if (snapshot.empty) {
             return res.status(401).json({ message: 'username is wrong' });
@@ -210,14 +219,16 @@ const loginUser = async (req, res) => {
                 emailSent = result.success;
                 emailError = result.error;
             } else {
-                console.log(`\n[SMART DEV MODE] Bypassing email for ${cleanIdentifier}. OTP: ${generatedOtp}\n`);
+                console.log(`\n\x1b[43m\x1b[30m  👑 GOLD DESK SMART DEV MODE  \x1b[0m`);
+                console.log(`\x1b[1m\x1b[33m  OTP FOR ${cleanIdentifier} IS: \x1b[0m\x1b[1m\x1b[32m${generatedOtp}\x1b[0m`);
+                console.log(`\x1b[43m\x1b[30m  USE THIS CODE TO LOG IN NOW  \x1b[0m\n`);
             }
 
             if (!isDevMode && !emailSent) {
                 console.error(`[DEV ERROR] Email delivery failed: ${emailError}`);
-                console.log(`\n---------------------------------------------------------`);
-                console.log(`[DEV ONLY] OTP for ${cleanIdentifier}: ${generatedOtp}`);
-                console.log(`---------------------------------------------------------\n`);
+                console.log(`\n\x1b[41m\x1b[37m[ ERROR ] EMAIL DELIVERY FAILED \x1b[0m`);
+                console.log(`\x1b[33mLOGIN OTP FOR ${cleanIdentifier} IS:\x1b[0m \x1b[1m\x1b[32m${generatedOtp}\x1b[0m`);
+                console.log(`\x1b[31mPlease check your Gmail App Password setup.\x1b[0m\n`);
                 return res.status(500).json({ 
                     message: 'OTP delivery failed. Please ensure your email configuration is valid (App Passwords required for Gmail).' 
                 });
@@ -379,14 +390,16 @@ const forgotPasswordRequest = async (req, res) => {
             emailSent = result.success;
             emailError = result.error;
         } else {
-            console.log(`\n[SMART DEV MODE] Bypassing recovery email for ${sendToEmail}. OTP: ${generatedOtp}\n`);
+            console.log(`\n\x1b[43m\x1b[30m  👑 GOLD DESK RECOVERY MODE   \x1b[0m`);
+            console.log(`\x1b[1m\x1b[33m  RECOVERY OTP FOR ${sendToEmail} IS: \x1b[0m\x1b[1m\x1b[32m${generatedOtp}\x1b[0m`);
+            console.log(`\x1b[43m\x1b[30m  USE THIS CODE TO RESET NOW   \x1b[0m\n`);
         }
 
         if (!isDevMode && !emailSent) {
             console.error(`[DEV ERROR] Recovery email delivery failed: ${emailError}`);
-            console.log(`\n---------------------------------------------------------`);
-            console.log(`[DEV ONLY] Recovery OTP for ${sendToEmail}: ${generatedOtp}`);
-            console.log(`---------------------------------------------------------\n`);
+            console.log(`\n\x1b[41m\x1b[37m[ ERROR ] RECOVERY EMAIL FAILED \x1b[0m`);
+            console.log(`\x1b[33mRECOVERY OTP FOR ${sendToEmail} IS:\x1b[0m \x1b[1m\x1b[32m${generatedOtp}\x1b[0m`);
+            console.log(`\n---------------------------------------------------------\n`);
             return res.status(500).json({ 
                 message: 'Failed to send reset OTP to your recovery email.' 
             });
