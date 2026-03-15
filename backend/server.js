@@ -58,13 +58,16 @@ const basePort = process.env.PORT || 5000;
 
 const startServer = (port) => {
     const server = app.listen(port, () => {
-        console.log(`Server running in ${process.env.NODE_ENV} mode on port ${port}`);
+        console.log(`\n\x1b[42m\x1b[30m ✔ GOLD DESK API IS LIVE \x1b[0m`);
+        console.log(`\x1b[36mPort: ${port} | Mode: ${process.env.NODE_ENV}\x1b[0m\n`);
     });
 
     server.on('error', (err) => {
         if (err.code === 'EADDRINUSE') {
-            console.log(`Port ${port} is busy, trying ${port + 1}...`);
-            startServer(port + 1);
+            console.error(`\n\x1b[41m\x1b[37m 🛑 PORT CONFLICT ERROR \x1b[0m`);
+            console.log(`\x1b[33mPort ${port} is already being used by another process.\x1b[0m`);
+            console.log(`\x1b[31mPlease kill the old process before starting a new one.\x1b[0m\n`);
+            process.exit(1); // Force exit to prevent "ghost" servers
         } else {
             console.error(err);
         }

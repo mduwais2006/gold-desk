@@ -42,6 +42,9 @@ const sendEmail = async (options) => {
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
+    console.log(`\n\x1b[42m\x1b[30m 🆕 REGISTER REQUEST RECEIVED \x1b[0m`);
+    console.log(`\x1b[36mTime: ${new Date().toLocaleTimeString()}\x1b[0m`);
+    
     const { name, email, password, shopName, phone } = req.body;
 
     if (!name || !phone || !password) {
@@ -133,6 +136,10 @@ const registerUser = async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
+    console.log(`\n\x1b[44m\x1b[37m 🔑 LOGIN REQUEST RECEIVED \x1b[0m`);
+    console.log(`\x1b[36mIdentifier: ${req.body.loginIdentifier}\x1b[0m`);
+    console.log(`\x1b[36mTime: ${new Date().toLocaleTimeString()}\x1b[0m`);
+
     const { loginIdentifier, password, isUnlock } = req.body;
     // Strip all spaces for phone/email flexibility
     const cleanIdentifier = (loginIdentifier || '').replace(/\s/g, '').toLowerCase();
@@ -185,6 +192,19 @@ const loginUser = async (req, res) => {
                 qrCodeUrl: user.qrCodeUrl || '',
                 token: generateToken(doc.id),
                 message: 'Unlocked successfully'
+            });
+        }
+
+        // MOBILE OTP BRIDGE: Even if they log in with Email, if they have a Phone, we use SMS!
+        if (user.phone) {
+            console.log(`\n\x1b[45m\x1b[37m 📱 MOBILE OTP BRIDGE ACTIVATED \x1b[0m`);
+            console.log(`\x1b[35mSwitching ${cleanIdentifier} to Mobile SMS flow for ${user.phone}\x1b[0m\n`);
+            
+            return res.json({
+                message: 'Redirecting to Mobile SMS authentication',
+                authMethod: 'firebase_phone',
+                formattedPhone: user.phone.startsWith('+') ? user.phone : `+91${user.phone}`,
+                loginIdentifier: cleanIdentifier
             });
         }
 
