@@ -195,19 +195,6 @@ const loginUser = async (req, res) => {
             });
         }
 
-        // MOBILE OTP BRIDGE: Even if they log in with Email, if they have a Phone, we use SMS!
-        if (user.phone) {
-            console.log(`\n\x1b[45m\x1b[37m 📱 MOBILE OTP BRIDGE ACTIVATED \x1b[0m`);
-            console.log(`\x1b[35mSwitching ${cleanIdentifier} to Mobile SMS flow for ${user.phone}\x1b[0m\n`);
-            
-            return res.json({
-                message: 'Redirecting to Mobile SMS authentication',
-                authMethod: 'firebase_phone',
-                formattedPhone: user.phone.startsWith('+') ? user.phone : `+91${user.phone}`,
-                loginIdentifier: cleanIdentifier
-            });
-        }
-
         const isEmail = cleanIdentifier.includes('@');
 
         if (isEmail) {
