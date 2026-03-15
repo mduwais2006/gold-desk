@@ -322,8 +322,9 @@ const Settings = () => {
     const connectDeviceFinal = async (deviceToConnect) => {
         try {
             setIsScanning(true);
-            const finalName = deviceToConnect.name || 'Unknown Bluetooth Device';
-            toast.info('Validating Hardware Setup (GATT Handshake)...', { autoClose: 2000 });
+            const finalName = deviceToConnect.name || 'Unknown Billing Machine';
+            toast.info('Performing Security Handshake (System Link)...', { autoClose: 2000 });
+
 
             await deviceToConnect.gatt.connect();
             setupDeviceListeners(deviceToConnect);
@@ -447,10 +448,11 @@ const Settings = () => {
                             onClick={() => setActiveTab(tab)}
                             className={`btn rounded-pill px-4 fw-bold text-nowrap transition-all ${activeTab === tab ? 'btn-gold shadow-sm' : 'btn-light border text-secondary'}`}
                         >
-                            {tab === 'branding' && 'Branding'}
+                            {tab === 'branding' && 'Shop Logo & Name'}
                             {tab === 'billing' && 'Billing & Payment'}
-                            {tab === 'security' && 'Security Settings'}
-                            {tab === 'system' && 'System Hub'}
+                            {tab === 'security' && 'Account Security'}
+                            {tab === 'system' && 'Billing Machine & Time'}
+
                         </motion.button>
                     ))}
                 </div>
@@ -461,7 +463,8 @@ const Settings = () => {
                         <div className="col-12 animate-fade-in">
                             <div className="glass-panel p-4 border-0 mb-4 position-relative">
                                 <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
-                                    <h5 className="fw-bold m-0">Branding</h5>
+                                    <h5 className="fw-bold m-0">Business Ownership</h5>
+
                                     <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setIsEditingProfile(!isEditingProfile)}>
                                         {isEditingProfile ? 'Cancel' : 'Edit Info'}
                                     </button>
@@ -564,17 +567,20 @@ const Settings = () => {
                     {activeTab === 'security' && (
                         <div className="col-12 animate-fade-in">
                             <div className="glass-panel p-4 border-0 mb-4">
-                                <h5 className="fw-bold mb-4 border-bottom pb-2">Security Settings</h5>
+                                <h5 className="fw-bold mb-4 border-bottom pb-2">Login Security</h5>
+
                                 
                                 <div className="row g-4">
                                     <div className="col-md-6">
                                         <div className="p-3 border rounded h-100 d-flex flex-column justify-content-between shadow-sm">
                                             <div>
                                                 <div className="d-flex justify-content-between align-items-center mb-2">
-                                                    <h6 className="fw-bold m-0">Recovery Email</h6>
+                                                    <h6 className="fw-bold m-0">Recovery Contact Email</h6>
+
                                                     {user?.recoveryEmail && <span className="badge bg-success">🛡️ SECURED</span>}
                                                 </div>
-                                                <p className="small text-secondary mb-3">Linked email for account recovery when password is forgotten.</p>
+                                                <p className="small text-secondary mb-3">Backup email used to reset your password if you ever forget it.</p>
+
                                             </div>
 
                                             {(user?.recoveryEmail && !isChangingRecovery) ? (
@@ -646,8 +652,9 @@ const Settings = () => {
                                     <div className="col-md-6">
                                         <div className="p-3 border rounded h-100 d-flex flex-column justify-content-between shadow-sm">
                                             <div>
-                                                <h6 className="fw-bold mb-2">Credential Management</h6>
-                                                <p className="small text-secondary mb-3">Update your core administrative login credentials.</p>
+                                                <h6 className="fw-bold mb-2">Username & Password</h6>
+                                                <p className="small text-secondary mb-3">Update your main login details used to enter the system.</p>
+
                                             </div>
                                             <button className="btn-security w-100" onClick={() => setShowCredentialModal(true)}>
                                                 Change Login Username / Password
@@ -673,19 +680,22 @@ const Settings = () => {
                     {activeTab === 'system' && (
                         <div className="col-12 animate-fade-in">
                             <div className="glass-panel p-4 border-0">
-                                <h5 className="fw-bold mb-4 border-bottom pb-2">System Hub</h5>
+                                <h5 className="fw-bold mb-4 border-bottom pb-2">System Hub (Billing Machine)</h5>
+
 
                                 <div className="row g-4">
                                     <div className="col-xl-7">
                                         <div className="p-3 border rounded mb-3 bg-light-subtle">
-                                            <h6 className="fw-bold mb-3">Default Thermal Printer</h6>
+                                            <h6 className="fw-bold mb-3">Thermal Billing Machine</h6>
+
                                             <div className="d-flex justify-content-between align-items-center mb-3">
                                                 <div className="small">
                                                     <span className="text-secondary">Status:</span>
                                                     <div className={`badge ${printerStatus === 'connected' ? 'bg-success' : 'bg-danger'} ms-2`}>{printerStatus.toUpperCase()}</div>
                                                 </div>
                                                 <button type="button" className="btn btn-sm btn-gold fw-bold px-3 shadow-sm" onClick={handlePrinterScan} disabled={isScanning}>
-                                                    {isScanning ? 'Scanning...' : 'Scan Bluetooth'}
+                                                    {isScanning ? 'Connecting...' : 'Connect Wireless Machine'}
+
                                                 </button>
                                             </div>
                                             <div className="mb-3">
@@ -717,9 +727,10 @@ const Settings = () => {
                                                     localStorage.removeItem('posPrinter');
                                                     localStorage.removeItem('posPrinterName');
                                                     setPrinterStatus('offline');
-                                                    setPrinterName('No printers found');
-                                                    toast.info('Machine removed.');
-                                                }}>Disconnect Machine</button>
+                                                    setPrinterName('No machine found');
+                                                    toast.info('Billing Machine removed.');
+                                                }}>Remove Billing Machine</button>
+
                                                 <button type="button" className="btn btn-sm btn-outline-secondary flex-grow-1 shadow-sm" onClick={handleTestPrint}>Test Print</button>
                                             </div>
                                         </div>

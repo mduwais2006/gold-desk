@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { usePrinter } from '../context/PrinterContext';
+import LoadingSequence from '../components/LoadingSequence';
+
 
 const Billing = () => {
     const { user } = useAuth();
@@ -331,8 +333,13 @@ const Billing = () => {
         );
     }
 
+    if (isReconnecting) {
+        return <LoadingSequence text="Syncing with Hardware..." fullScreen={true} />;
+    }
+
     return (
-        <div className="d-flex">
+        <div className="d-flex theme-colorful">
+
             <Sidebar />
             <div className="main-content flex-grow-1">
                 <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
@@ -353,19 +360,20 @@ const Billing = () => {
                             >
                                 <div className="d-flex align-items-center gap-2 mb-4">
                                     <div className="bg-warning-subtle p-2 rounded-3 text-warning">👤</div>
-                                    <h5 className="fw-bold m-0">Customer Information</h5>
+                                    <h5 className="fw-bold m-0 text-high-contrast">Customer Information</h5>
                                 </div>
                                 <div className="row g-3">
                                     <div className="col-md-6">
-                                        <label className="form-label small fw-bold text-secondary text-uppercase tracking-tighter">Customer Name</label>
+                                        <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Customer Name</label>
                                         <input type="text" className="form-control form-control-glass bg-light" placeholder="Enter Full Name" {...register('customerName', { required: true })} />
                                     </div>
                                     <div className="col-md-6">
-                                        <label className="form-label small fw-bold text-secondary text-uppercase tracking-tighter">Mobile Number</label>
+                                        <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Mobile Number</label>
                                         <input type="tel" className="form-control form-control-glass bg-light" placeholder="+91 00000 00000" {...register('mobile', { required: true })} />
                                     </div>
                                 </div>
                             </motion.div>
+
 
                             {/* Cart Items */}
                             <motion.div
@@ -491,9 +499,10 @@ const Billing = () => {
                                 </div>
 
                                 <div className="d-flex justify-content-between mb-4 align-items-center border-bottom pb-3">
-                                    <span className="text-secondary fw-semibold small">GST Amount ({watchGst}%)</span>
-                                    <span className="small">+ ₹ {gstAmount.toLocaleString('en-IN')}</span>
+                                    <span className="text-high-contrast fw-900 small text-uppercase tracking-widest">Tax (GST {watchGst}%)</span>
+                                    <span className="small text-high-contrast fw-900">+ ₹ {gstAmount.toLocaleString('en-IN')}</span>
                                 </div>
+
 
                                 <div className="d-flex justify-content-between align-items-center mb-2">
                                     <span className="text-danger fw-semibold">Discount</span>

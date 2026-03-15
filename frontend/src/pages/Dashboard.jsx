@@ -1,26 +1,25 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import Sidebar from '../components/Sidebar';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAnalyticsData } from '../redux/analyticsSlice';
+import LoadingSequence from '../components/LoadingSequence';
 
 const Dashboard = () => {
     const dispatch = useDispatch();
     const { data: rawData, status: analyticsStatus } = useSelector((state) => state.analytics);
     
     useEffect(() => {
-        // Always fetch fresh data on dashboard mount to instantly reflect new bills or entries
         dispatch(fetchAnalyticsData());
     }, [dispatch]);
 
     const StatCard = React.memo(({ title, value, icon, colorClass, subtitle }) => (
-        <div className="stat-card glass-panel border-0 h-100">
-            <div className={`stat-icon ${colorClass || ''}`}>{icon}</div>
-            <div className="stat-title">{title}</div>
-            <div className={`stat-value ${colorClass?.includes('text-success') ? 'text-success' : ''}`}>{value}</div>
+        <div className="stat-card glass-panel border-0 h-100 p-4">
+            <div className={`stat-icon mb-3 ${colorClass || ''}`} style={{ fontSize: '2rem' }}>{icon}</div>
+            <div className="stat-title mb-1" style={{ fontSize: '0.85rem', fontWeight: 700, opacity: 0.7, textTransform: 'uppercase', letterSpacing: '1px' }}>{title}</div>
+            <div className="stat-value h2 fw-bold text-high-contrast mb-0">{value}</div>
             {subtitle && (
-                <div className="mt-2 fw-semibold text-secondary" style={{ fontSize: '0.8rem' }}>
+                <div className="mt-3 fw-semibold text-secondary" style={{ fontSize: '0.8rem' }}>
                     {subtitle}
                 </div>
             )}
@@ -35,70 +34,60 @@ const Dashboard = () => {
 
         const { stats, compareMonths } = rawData;
         
-        // Prepare chart data from summary
         const computedChartData = [
             { name: compareMonths.last, value: stats.lastMonthRevenue, fill: '#94a3b8' },
-            { name: compareMonths.current, value: stats.thisMonthRevenue, fill: '#f59e0b' }
+            { name: compareMonths.current, value: stats.thisMonthRevenue, fill: 'var(--accent-primary)' }
         ];
         
         return { stats, chartData: computedChartData, compareMonths };
     }, [rawData]);
 
     const isLoading = analyticsStatus === 'loading' && (!rawData || !rawData.stats);
-    // Removed old manual fetching logic
 
     return (
-        <div className="d-flex">
+        <div className="d-flex theme-colorful">
             <Sidebar />
             <div className="main-content flex-grow-1">
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h2 className="fw-bold m-0">Business Overview</h2>
+                <div className="d-flex justify-content-between align-items-center mb-5">
+                    <div>
+                        <h1 className="fw-900 m-0 text-high-contrast" style={{ letterSpacing: '-1px' }}>Dashboard</h1>
+                        <p className="text-secondary m-0">Welcome back to Gold Desk Business Suite</p>
+                    </div>
                 </div>
 
                 {isLoading ? (
-                    <div className="d-flex justify-content-center align-items-center" style={{ height: '300px' }}>
-                        <div className="spinner-border text-warning" role="status">
-                            <span className="visually-hidden">Loading Fast State...</span>
-                        </div>
-                    </div>
+                    <LoadingSequence text="Fetching Analytics..." />
                 ) : (
                     <>
-                        <div className="row g-4 mb-5 animate-fade-in">
-                            <div className="col-md-3">
-                                <StatCard 
-                                    title="Today's Entry Value" 
-                                    value={`₹ ${stats?.todayRevenue?.toLocaleString('en-IN') || '0'}`} 
-                                    icon="📈" 
-                                    colorClass="text-success" 
-                                />
-                            </div>
-                            <div className="col-md-3">
-                                <StatCard 
-                                    title="Total Entries (All Time)" 
-                                    value={stats?.totalEntries?.toLocaleString('en-IN') || '0'} 
-                                    icon="📝" 
-                                    colorClass="text-info bg-info bg-opacity-10" 
-                                />
-                             </div>
-                            <div className="col-md-3">
-                                <StatCard 
-                                    title={`Customers (${compareMonths?.current})`} 
-                                    value={stats?.customersThisMonth?.toLocaleString('en-IN') || '0'} 
-                                    icon="👥" 
-                                    colorClass="text-success bg-success bg-opacity-10" 
-                                    subtitle={`${compareMonths?.last}: ${stats?.customersLastMonth?.toLocaleString('en-IN') || '0'}`}
-                                />
-                             </div>
-                            <div className="col-md-3">
-                                <StatCard 
-                                    title="Growth Analysis" 
-                                    value={`${stats?.customerGrowth >= 0 ? '+' : ''}${stats?.customerGrowth || 0}%`} 
-                                    icon="📊" 
-                                    colorClass={stats?.customerGrowth >= 0 ? 'text-success bg-primary bg-opacity-10' : 'text-danger bg-danger bg-opacity-10'} 
-                                    subtitle={`${compareMonths?.current} vs ${compareMonths?.last}`}
-                                />
-                             </div>
+                        <div className="stat-grid mb-5 animate-fade-in">
+                            <StatCard 
+                                title="Today's Entry Value" 
+                                value={`₹ ${stats?.todayRevenue?.toLocaleString('en-IN') || '0'}`} 
+                                icon="📈" 
+                                colorClass="text-success" 
+                            />
+                            <StatCard 
+                                title="Total Entries (All Time)" 
+                                value={stats?.totalEntries?.toLocaleString('en-IN') || '0'} 
+                                icon="📝" 
+                                colorClass="text-info bg-info bg-opacity-10" 
+                            />
+                            <StatCard 
+                                title={`Customers (${compareMonths?.current})`} 
+                                value={stats?.customersThisMonth?.toLocaleString('en-IN') || '0'} 
+                                icon="👥" 
+                                colorClass="text-success bg-success bg-opacity-10" 
+                                subtitle={`${compareMonths?.last}: ${stats?.customersLastMonth?.toLocaleString('en-IN') || '0'}`}
+                            />
+                            <StatCard 
+                                title="Growth Analysis" 
+                                value={`${stats?.customerGrowth >= 0 ? '+' : ''}${stats?.customerGrowth || 0}%`} 
+                                icon="📊" 
+                                colorClass={stats?.customerGrowth >= 0 ? 'text-success bg-primary bg-opacity-10' : 'text-danger bg-danger bg-opacity-10'} 
+                                subtitle={`${compareMonths?.current} vs ${compareMonths?.last}`}
+                            />
                         </div>
+
 
                         <div className="row g-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
                             <div className="col-lg-8">
@@ -107,12 +96,12 @@ const Dashboard = () => {
                                     <div style={{ height: '300px' }}>
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dx={-10} tickFormatter={(value) => `₹${value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`} />
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
+                                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} dy={10} />
+                                                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} dx={-10} tickFormatter={(value) => `₹${value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`} />
                                                 <Tooltip 
-                                                    cursor={{ fill: '#f8fafc' }}
-                                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} 
+                                                    cursor={{ fill: 'var(--accent-soft)' }}
+                                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }} 
                                                     formatter={(value) => `₹ ${value.toLocaleString('en-IN')}`} 
                                                 />
                                                 <Bar dataKey="value" radius={[10, 10, 0, 0]} barSize={60}>
@@ -129,20 +118,20 @@ const Dashboard = () => {
                                 <div className="glass-panel p-4 h-100 border-0 d-flex flex-column gap-3">
                                     <h5 className="fw-bold mb-2">Entry Breakdown</h5>
 
-                                    <div className="p-3 rounded bg-light d-flex justify-content-between align-items-center">
+                                    <div className="p-3 rounded bg-light d-flex justify-content-between align-items-center" style={{ background: 'var(--bg-primary) !important' }}>
                                         <div className="d-flex align-items-center gap-2">
                                             <div className="rounded-circle bg-warning" style={{ width: 12, height: 12 }}></div>
                                             <span className="fw-semibold text-secondary">Gold Items</span>
                                         </div>
-                                        <span className="fw-bold text-dark">₹ {stats?.goldSales?.toLocaleString('en-IN') || '0'}</span>
+                                        <span className="fw-bold text-high-contrast">₹ {stats?.goldSales?.toLocaleString('en-IN') || '0'}</span>
                                     </div>
 
-                                    <div className="p-3 rounded bg-light d-flex justify-content-between align-items-center">
+                                    <div className="p-3 rounded bg-light d-flex justify-content-between align-items-center" style={{ background: 'var(--bg-primary) !important' }}>
                                         <div className="d-flex align-items-center gap-2">
                                             <div className="rounded-circle bg-secondary" style={{ width: 12, height: 12 }}></div>
                                             <span className="fw-semibold text-secondary">Silver Items</span>
                                         </div>
-                                        <span className="fw-bold text-dark">₹ {stats?.silverSales?.toLocaleString('en-IN') || '0'}</span>
+                                        <span className="fw-bold text-high-contrast">₹ {stats?.silverSales?.toLocaleString('en-IN') || '0'}</span>
                                     </div>
 
                                     <div className="mt-auto">
@@ -150,8 +139,8 @@ const Dashboard = () => {
                                             <span>Total Items Logged</span>
                                             <span>{stats?.totalEntries || 0}</span>
                                         </div>
-                                        <div className="progress" style={{ height: '6px' }}>
-                                            <div className="progress-bar bg-warning" role="progressbar" style={{ width: '100%' }}></div>
+                                        <div className="progress" style={{ height: '6px', background: 'var(--border-color)' }}>
+                                            <div className="progress-bar" role="progressbar" style={{ width: '100%', background: 'var(--accent-primary)' }}></div>
                                         </div>
                                     </div>
                                 </div>

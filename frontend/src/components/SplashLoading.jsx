@@ -1,166 +1,126 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SplashLoading = ({ onComplete }) => {
     const [progress, setProgress] = useState(0);
 
-    // Intelligent Velocity Engine: Still adapts speed based on connectivity, but silently
-    const velocity = useMemo(() => {
-        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-        if (conn) {
-            if (conn.saveData) return 0.5;
-            const effective = conn.effectiveType;
-            if (effective === '4g') return 2.0; // Boosted from 1.5
-            if (effective === '3g') return 1.2; // Boosted from 0.8
-            return 0.6; // Boosted from 0.4
-        }
-        return 1.6; // Boosted from 1.2
-    }, []);
-
     useEffect(() => {
-        let currentProgress = 0;
+        // --- Internet-Aware Progress Engine ---
+        // Measures approximate connection speed to adjust filling speed
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        const speedFactor = connection ? Math.max(0.5, Math.min(connection.downlink / 10, 2)) : 1;
+        
         const interval = setInterval(() => {
-            let increment = Math.random() * 2 * velocity;
-            if (currentProgress < 70) {
-                increment = Math.random() * 3 * velocity;
-            } else if (currentProgress < 95) {
-                increment = Math.random() * 0.5 * velocity;
-            } else {
-                increment = 0.1;
-            }
-
-            currentProgress = Math.min(currentProgress + increment, 99.9);
-            setProgress(currentProgress);
-
-            if (currentProgress > 99) {
-                clearInterval(interval);
-                setTimeout(() => {
-                    setProgress(100);
-                    setTimeout(onComplete, 500);
-                }, 400);
-            }
-        }, 50);
+            setProgress(prev => {
+                const increment = (Math.random() * 10 + 2) * speedFactor;
+                const next = prev + increment;
+                
+                if (next >= 100) {
+                    clearInterval(interval);
+                    setTimeout(onComplete, 300);
+                    return 100;
+                }
+                return next;
+            });
+        }, 120);
 
         return () => clearInterval(interval);
-    }, [onComplete, velocity]);
+    }, [onComplete]);
 
     return (
-        <AnimatePresence>
-            <motion.div
-                className="splash-screen"
-                initial={{ opacity: 1 }}
-                exit={{ opacity: 0, scale: 1.05, filter: "blur(20px)" }}
-                transition={{ duration: 0.8, ease: "easeInOut" }}
-                style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100vw',
-                    height: '100vh',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'var(--bg-primary)', // Real theme background
-                    zIndex: 9999,
-                    overflow: 'hidden'
-                }}
+        <div className="splash-screen">
+            {/* Dynamic Background Auras */}
+            <motion.div 
+                animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.15, 0.1] }}
+                transition={{ duration: 8, repeat: Infinity }}
+                className="bg-aura aura-gold" 
+                style={{ top: '-10%', right: '-5%' }}
+            />
+            <motion.div 
+                animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.12, 0.1] }}
+                transition={{ duration: 10, repeat: Infinity, delay: 1 }}
+                className="bg-aura aura-azure" 
+                style={{ bottom: '-10%', left: '-5%' }}
+            />
+
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center position-relative"
+                style={{ zIndex: 10 }}
             >
-                {/* Theme-aware Aura Background */}
-                <motion.div
-                    animate={{ scale: [1, 1.2, 1], opacity: [0.05, 0.12, 0.05] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                    style={{ 
-                        position: 'absolute', 
-                        width: '70vw', 
-                        height: '70vw', 
-                        background: 'radial-gradient(circle, var(--accent-primary) 0%, transparent 70%)', 
-                        borderRadius: '50%', 
-                        top: '50%', 
-                        left: '50%', 
-                        transform: 'translate(-50%, -50%)', 
-                        pointerEvents: 'none', 
-                        filter: 'blur(60px)' 
-                    }}
-                />
+                {/* Premium Logo Display */}
+                <div style={{ marginBottom: '2.5rem' }}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                    >
+                        <img 
+                            src="/logo.png" 
+                            alt="Gold Desk Logo" 
+                            style={{ 
+                                width: 'min(120px, 25vw)', 
+                                filter: 'drop-shadow(0 0 15px rgba(212, 175, 55, 0.3))',
+                                marginBottom: '1rem'
+                            }} 
+                        />
+                    </motion.div>
+                    {/* Fixed: Removed extra motion rotation to prevent 'two spinners' effect */}
+                    <div className="loading-spinner mx-auto" />
+                </div>
+
 
                 <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
+                    initial={{ letterSpacing: '2px', opacity: 0 }}
+                    animate={{ letterSpacing: 'clamp(4px, 1.5vw, 12px)', opacity: 1 }}
                     transition={{ duration: 0.8 }}
-                    style={{ position: 'relative', zIndex: 10, textAlign: 'center' }}
                 >
-                    <div style={{
-                        width: '120px',
-                        height: '120px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'var(--glass-bg)',
-                        backdropFilter: 'blur(20px)',
-                        WebkitBackdropFilter: 'blur(20px)',
-                        border: '1px solid var(--glass-border)',
-                        borderRadius: '35px',
-                        boxShadow: 'var(--glass-shadow)',
-                        margin: '0 auto 40px',
-                        position: 'relative'
-                    }}>
-                        <motion.svg
-                            width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: 1 }}
-                            transition={{ duration: 2, ease: "easeInOut" }}
-                        >
-                            <polygon points="12 2 2 7 12 22 22 7 12 2" />
-                            <polyline points="2 7 12 7 22 7" />
-                        </motion.svg>
-                        
-                    </div>
-
                     <h1 style={{
                         margin: 0,
-                        color: 'var(--text-primary)',
-                        fontSize: '3rem',
-                        letterSpacing: '8px',
+                        color: 'var(--accent-primary)',
+                        fontSize: 'clamp(1.8rem, 5vw, 3.5rem)',
                         fontWeight: 900,
-                        textTransform: 'uppercase'
+                        textTransform: 'uppercase',
+                        textShadow: '0 10px 30px rgba(212, 175, 55, 0.15)'
                     }}>
                         GOLD DESK
                     </h1>
                 </motion.div>
 
-                {/* Minimalist Progress System */}
-                <div className="mt-5" style={{ width: '220px', zIndex: 10 }}>
-                    <div className="d-flex justify-content-between align-items-center mb-1 px-1">
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
-                           LOADING...
-                        </span>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--accent-primary)', fontWeight: '900', fontFamily: 'monospace' }}>
-                            {Math.round(progress)}%
-                        </span>
+                <div className="mt-4">
+                    <div className="loading-text">
+                        System Initialization... {Math.round(progress)}%
                     </div>
-                    <div style={{
-                        height: "3px",
-                        width: "100%",
-                        background: 'var(--glass-border)',
-                        borderRadius: "10px",
-                        overflow: 'hidden'
+                    {/* Professional Progress Bar */}
+                    <div className="mx-auto mt-4" style={{ 
+                        width: 'min(280px, 70vw)', 
+                        height: '6px', 
+                        background: 'var(--border-color)', 
+                        borderRadius: '10px', 
+                        overflow: 'hidden',
+                        padding: '1px'
                     }}>
-                        <motion.div
+                        <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
-                            transition={{ ease: "linear" }}
-                            style={{
-                                height: '100%',
-                                background: 'var(--accent-primary)',
-                                boxShadow: '0 0 10px var(--accent-primary)'
+                            transition={{ type: 'spring', damping: 20, stiffness: 60 }}
+                            style={{ 
+                                height: '100%', 
+                                background: 'linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))',
+                                borderRadius: '10px'
                             }}
                         />
                     </div>
                 </div>
+                
+                <div className="mt-5 small text-secondary opacity-50 fw-bold tracking-widest text-uppercase" style={{ fontSize: '0.6rem' }}>
+                    Secure Cloud Connectivity Active
+                </div>
             </motion.div>
-        </AnimatePresence>
+        </div>
     );
 };
+
 
 export default SplashLoading;

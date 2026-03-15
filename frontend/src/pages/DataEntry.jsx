@@ -9,6 +9,8 @@ import { printReceiptBluetooth } from '../utils/printerUtils';
 import { useAuth } from '../context/AuthContext';
 import { usePrinter } from '../context/PrinterContext';
 import { getAppTime } from '../utils/timeUtils';
+import LoadingSequence from '../components/LoadingSequence';
+
 
 const getCurrentDateTimeLocal = () => {
     const now = getAppTime();
@@ -373,7 +375,8 @@ const DataEntry = () => {
     const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
     return (
-        <div className="d-flex min-vh-100">
+        <div className="d-flex min-vh-100 theme-colorful">
+
             <Sidebar />
             <div className="main-content flex-grow-1">
                 <div className="d-flex justify-content-between align-items-center mb-4">
@@ -611,27 +614,22 @@ const DataEntry = () => {
                                     </div>
                                     
                                     {filteredReports.length > 0 && (
-                                        <div className="row g-2 mt-3">
-                                            <div className="col-md-4">
-                                                <div className="p-3 bg-light border-start border-primary border-4 rounded shadow-sm h-100">
-                                                    <div className="small text-secondary fw-bold text-uppercase">Untaxed Subtotal</div>
-                                                    <div className="h4 m-0 fw-bold">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) / (1 + (Number(r.gstPercentage || 0) / 100))), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
-                                                </div>
+                                        <div className="stat-grid mt-3 g-3">
+                                            <div className="p-3 bg-light border-start border-primary border-4 rounded shadow-sm">
+                                                <div className="small text-secondary fw-bold text-uppercase">Untaxed Subtotal</div>
+                                                <div className="h4 m-0 fw-600">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) / (1 + (Number(r.gstPercentage || 0) / 100))), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
                                             </div>
-                                            <div className="col-md-4">
-                                                <div className="p-3 bg-light border-start border-warning border-4 rounded shadow-sm h-100">
-                                                    <div className="small text-secondary fw-bold text-uppercase">Total Tax (GST)</div>
-                                                    <div className="h4 m-0 fw-bold text-primary">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) * (Number(r.gstPercentage || 0) / (100 + Number(r.gstPercentage || 0)))), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
-                                                </div>
+                                            <div className="p-3 bg-light border-start border-warning border-4 rounded shadow-sm">
+                                                <div className="small text-secondary fw-bold text-uppercase">Total Tax (GST)</div>
+                                                <div className="h4 m-0 fw-600 text-primary">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) * (Number(r.gstPercentage || 0) / (100 + Number(r.gstPercentage || 0)))), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
                                             </div>
-                                            <div className="col-md-4">
-                                                <div className="p-3 bg-light border-start border-success border-4 rounded shadow-sm h-100">
-                                                    <div className="small text-secondary fw-bold text-uppercase">Total Revenue</div>
-                                                    <div className="h4 m-0 fw-bold text-success">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) || 0), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
-                                                </div>
+                                            <div className="p-3 bg-light border-start border-success border-4 rounded shadow-sm">
+                                                <div className="small text-secondary fw-bold text-uppercase">Total Revenue</div>
+                                                <div className="h4 m-0 fw-600 text-success">₹ {filteredReports.reduce((acc, r) => acc + (Number(r.finalTotal) || 0), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
                                             </div>
                                         </div>
                                     )}
+
                                 </div>
                             </div>
 
@@ -653,10 +651,10 @@ const DataEntry = () => {
                                     <tbody>
                                         {isLoading ? (
                                             <tr><td colSpan="9" className="text-center py-5">
-                                                <div className="spinner-border text-warning spinner-border-sm me-2"></div>
-                                                Loading historical records...
+                                                <LoadingSequence text="Fetching Historical Records..." />
                                             </td></tr>
                                         ) : filteredReports.length === 0 ? (
+
                                             <tr><td colSpan="9" className="text-center py-5 text-secondary">
                                                 <h1 className="display-4 opacity-10">📂</h1>
                                                 No records found matching these filters.

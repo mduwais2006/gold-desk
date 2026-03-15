@@ -22,14 +22,10 @@ const About = React.lazy(() => import('./pages/About'));
 const LockScreen = React.lazy(() => import('./pages/LockScreen'));
 const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
 
+import LoadingSequence from './components/LoadingSequence';
+
 // Robust Page Loading Spinner
-const PageLoader = () => (
-    <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-        <div className="spinner-border text-warning" role="status">
-            <span className="visually-hidden">Loading...</span>
-        </div>
-    </div>
-);
+const PageLoader = () => <LoadingSequence fullScreen={true} />;
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {

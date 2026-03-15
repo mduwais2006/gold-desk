@@ -16,6 +16,8 @@ const Sidebar = () => {
     const { logout, user } = useAuth();
     const navigate = useNavigate();
     const [currentTime, setCurrentTime] = useState(getAppTime());
+    const [isOpen, setIsOpen] = useState(false);
+
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(getAppTime()), 1000);
@@ -66,53 +68,71 @@ const Sidebar = () => {
     };
 
     return (
-        <div className="sidebar d-flex flex-column justify-content-between">
-            <div>
-                <div className="mb-4 text-center">
-                    {user?.shopLogo ? (
-                        <img src={user.shopLogo} alt="Shop Logo" style={{ maxHeight: '80px', objectFit: 'contain', marginBottom: '10px' }} />
-                    ) : (
-                        <h3 className="fw-bold mb-0" style={{ color: 'var(--accent-primary)' }}>{user?.shopName || 'Gold Desk'}</h3>
-                    )}
-                    {user?.shopLogo && <h5 className="fw-bold mt-2 mb-0">{user?.shopName}</h5>}
-                    <small className="text-secondary">{!user?.shopName ? 'Management Portal' : ''}</small>
-                </div>
-
-                <div className="mb-4 p-3 rounded glass-panel text-center border-0 shadow-sm animate-fade-in" style={{ background: 'rgba(255, 193, 7, 0.05)' }}>
-                    <div className="fw-bold small text-warning mb-1">{formatDate(currentTime)}</div>
-                    <div className="fs-5 fw-bold font-monospace" style={{ letterSpacing: '1px' }}>{formatTime(currentTime)}</div>
-                </div>
-
-                <nav className="nav flex-column gap-2 mt-2">
-                    <NavLink to="/" className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
-                        <Icons.Dashboard /> <span>Dashboard</span>
-                    </NavLink>
-                    <NavLink to="/billing" className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
-                        <Icons.Billing /> <span>Billing / Invoice</span>
-                    </NavLink>
-
-                    <NavLink to="/data-entry" className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
-                        <Icons.DataEntry /> <span>Data Entry & Reports</span>
-                    </NavLink>
-                    <NavLink to="/about" className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
-                        <Icons.About /> <span>Help & About</span>
-                    </NavLink>
-                    <NavLink to="/settings" className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
-                        <Icons.Settings /> <span>Settings</span>
-                    </NavLink>
-                </nav>
-            </div>
-
-            <div className="mt-auto">
-                <div className="p-3 rounded glass-panel mb-3 text-center border-0">
-                    <p className="mb-0 fw-bold small text-truncate">{user?.name}</p>
-                    <p className="mb-0 text-secondary" style={{ fontSize: '0.75rem' }}>{user?.email}</p>
-                </div>
-                <button onClick={handleLogout} className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 font-monospace fw-semibold py-2">
-                    <Icons.Logout /> <span>Logout securely</span>
+        <>
+            {/* Mobile Header Toggle */}
+            <div className="mobile-header d-lg-none">
+                <button 
+                    className="btn btn-dark p-2 rounded-3 border-0 shadow-sm"
+                    onClick={() => setIsOpen(!isOpen)}
+                >
+                    <Icons.Dashboard />
                 </button>
+                <div className="ms-3 fw-bold text-accent-primary">{user?.shopName || 'GOLD DESK'}</div>
             </div>
-        </div>
+
+            {/* Sidebar Overlay for Mobile */}
+            {isOpen && <div className="fixed-inset d-lg-none" style={{ zIndex: 998, background: 'rgba(0,0,0,0.5)', position: 'fixed', inset: 0 }} onClick={() => setIsOpen(false)}></div>}
+
+            <div className={`sidebar d-flex flex-column justify-content-between ${isOpen ? 'open' : ''}`}>
+                <div>
+                    <div className="mb-4 text-center">
+                        {user?.shopLogo ? (
+                            <img src={user.shopLogo} alt="Shop Logo" style={{ maxHeight: '60px', objectFit: 'contain', marginBottom: '10px' }} />
+                        ) : (
+                            <h3 className="fw-900 mb-0" style={{ color: 'var(--accent-primary)', fontSize: '1.5rem', letterSpacing: '1px' }}>{user?.shopName || 'GOLD DESK'}</h3>
+                        )}
+                        <div className="d-none d-lg-block">
+                            {user?.shopLogo && <h6 className="fw-bold mt-2 mb-0">{user?.shopName}</h6>}
+                        </div>
+                    </div>
+
+                    <div className="mb-4 p-3 rounded glass-panel text-center border-0 shadow-sm animate-fade-in d-none d-lg-block" style={{ background: 'rgba(212, 175, 55, 0.05)' }}>
+                        <div className="fw-bold small text-warning mb-1">{formatDate(currentTime)}</div>
+                        <div className="fs-5 fw-bold font-monospace" style={{ letterSpacing: '1px' }}>{formatTime(currentTime)}</div>
+                    </div>
+
+                    <nav className="nav flex-column gap-2 mt-2">
+                        <NavLink to="/" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
+                            <Icons.Dashboard /> <span className="nav-text">Dashboard</span>
+                        </NavLink>
+                        <NavLink to="/billing" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
+                            <Icons.Billing /> <span className="nav-text">Billing / Invoice</span>
+                        </NavLink>
+
+                        <NavLink to="/data-entry" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
+                            <Icons.DataEntry /> <span className="nav-text">Data & Reports</span>
+                        </NavLink>
+                        <NavLink to="/about" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
+                            <Icons.About /> <span className="nav-text">Help & About</span>
+                        </NavLink>
+                        <NavLink to="/settings" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
+                            <Icons.Settings /> <span className="nav-text">Settings</span>
+                        </NavLink>
+                    </nav>
+                </div>
+
+                <div className="mt-auto">
+                    <div className="p-3 rounded glass-panel mb-3 text-center border-0 d-none d-lg-block">
+                        <p className="mb-1 fw-bold small text-truncate">{user?.name}</p>
+                        <p className="mb-0 text-secondary" style={{ fontSize: '0.7rem' }}>{user?.email}</p>
+                    </div>
+                    <button onClick={handleLogout} className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 font-monospace fw-semibold py-2">
+                        <Icons.Logout /> <span className="nav-text">Logout</span>
+                    </button>
+                </div>
+            </div>
+        </>
+
     );
 };
 
