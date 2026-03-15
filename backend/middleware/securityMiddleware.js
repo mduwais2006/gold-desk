@@ -23,6 +23,9 @@ const antiHackMiddleware = (req, res, next) => {
     // Advanced NoSQL & XSS Scrubbing
     if (req.body) {
         for (let key in req.body) {
+            // SKIP password field from being stripped to allow symbols like $, {, etc.
+            if (key === 'password') continue;
+            
             if (typeof req.body[key] === 'string') {
                 // Remove scripted payloads
                 req.body[key] = req.body[key].replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ''); 
