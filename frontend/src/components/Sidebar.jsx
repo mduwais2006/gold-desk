@@ -75,7 +75,6 @@ const Sidebar = () => {
             {/* Premium Mobile Header */}
             <div className="mobile-header d-lg-none">
                 <div className="d-flex align-items-center">
-                    <img src="/logo.png" alt="Logo" style={{ height: '32px', marginRight: '10px' }} />
                     <div className="fw-bold text-accent-primary small tracking-widest text-uppercase">{user?.shopName || 'GOLD DATA ENTRY'}</div>
                 </div>
                 <button 
@@ -108,22 +107,12 @@ const Sidebar = () => {
                     <div className="mb-5 text-center px-3">
                         {/* Premium Brand Header */}
                         <div className="brand-box mb-4">
-                            <img 
-                                src="/logo.png" 
-                                alt="Gold Data Entry Logo" 
-                                className="logo-img mb-3"
-                                style={{ 
-                                    width: '90px', 
-                                    height: '90px', 
-                                    filter: 'drop-shadow(0 0 10px rgba(212, 175, 55, 0.4))'
-                                }} 
-                            />
-
                             <h3 className="fw-900 mb-0" style={{ 
                                 color: 'var(--accent-primary)', 
-                                fontSize: '1.2rem', 
-                                letterSpacing: '2px',
-                                textTransform: 'uppercase' 
+                                fontSize: '1.4rem', /* Slightly larger font */
+                                letterSpacing: '3px', /* Increased letter spacing */
+                                textTransform: 'uppercase',
+                                padding: '1rem 0' /* Add some vertical padding */
                             }}>
                                 {user?.shopName || 'GOLD DATA ENTRY'}
                             </h3>
