@@ -43,23 +43,7 @@ const Login = () => {
                     if (window.recaptchaVerifier) { window.recaptchaVerifier.clear(); window.recaptchaVerifier = null; }
                 }
             } else {
-                if (res.showOtpLocally) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Email Delivery Failed',
-                        text: `Your email server configuration is incomplete. For testing, your OTP is: ${res.devOtp}`,
-                        confirmButtonColor: 'var(--accent-primary)'
-                    });
-                } else if (res.devOtp) {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Demo Environment',
-                        text: `Bypassing real email logic. Your fresh OTP is: ${res.devOtp}`,
-                        confirmButtonColor: 'var(--accent-primary)'
-                    });
-                } else {
-                    toast.success(res.message || 'OTP Sent');
-                }
+                toast.success(res.message || 'OTP Sent');
                 navigate('/verify-otp', { state: { loginIdentifier: res.loginIdentifier, authMethod: 'email', password: data.password } });
             }
 

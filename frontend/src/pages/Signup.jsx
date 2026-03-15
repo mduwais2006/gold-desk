@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 
 const Signup = () => {
     const { register, handleSubmit, formState: { errors } } = useForm();
@@ -20,8 +21,34 @@ const Signup = () => {
                 shopName: data.shopName,
                 phone: data.phone
             });
-            toast.success('Registration successful. Please log in.');
-            navigate('/login');
+            
+            Swal.fire({
+                title: '<h2 style="color: #eab308; font-weight: 800;">Welcome to Gold Desk Premium 👑</h2>',
+                html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <p style="color: #64748b; font-size: 1.1rem; margin-bottom: 20px;">Hi <b>${data.name}</b>, your account for <b>${data.shopName || 'your shop'}</b> is ready!</p>
+                        <div style="background: rgba(234, 179, 8, 0.05); padding: 15px; border-radius: 12px; border: 1px dashed #eab308;">
+                            <h4 style="color: #1e293b; margin-top: 0; font-size: 1rem;">Premium Features Unlocked:</h4>
+                            <ul style="color: #475569; padding-left: 20px; font-size: 0.9rem; line-height: 1.8;">
+                                <li>✨ <b>Real-time Sales Analytics</b></li>
+                                <li>🔐 <b>Secure Cloud Billing</b></li>
+                                <li>📊 <b>Inventory Intelligence</b></li>
+                                <li>⚡ <b>Blazing Fast Performance</b></li>
+                            </ul>
+                        </div>
+                        <p style="margin-top: 20px; color: #1e293b; text-align: center;">Please log in to explore your new dashboard.</p>
+                    </div>
+                `,
+                showConfirmButton: true,
+                confirmButtonText: 'Let\'s Get Started',
+                confirmButtonColor: '#eab308',
+                background: '#ffffff',
+                customClass: {
+                    popup: 'premium-popup'
+                }
+            }).then(() => {
+                navigate('/login');
+            });
         } catch (error) {
             toast.error(error.response?.data?.message || 'Registration failed');
         } finally {

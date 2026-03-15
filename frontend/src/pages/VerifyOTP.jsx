@@ -60,23 +60,7 @@ const VerifyOTP = () => {
                 }
             } else {
                 const res = await login(loginIdentifier, password);
-                if (res.showOtpLocally) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Email Delivery Failed',
-                        text: `Your email server configuration is incomplete. For testing, your OTP is: ${res.devOtp}`,
-                        confirmButtonColor: 'var(--accent-primary)'
-                    });
-                } else if (res.devOtp) {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Demo Environment',
-                        text: `Bypassing real email logic. Your fresh OTP is: ${res.devOtp}`,
-                        confirmButtonColor: 'var(--accent-primary)'
-                    });
-                } else {
-                    toast.success(res.message || 'New OTP Sent');
-                }
+                toast.success(res.message || 'New OTP Sent');
                 
                 // User requirement: Automatically clear entered data on resend
                 setValue('otp', '');

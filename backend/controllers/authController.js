@@ -7,10 +7,6 @@ const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
-const isPlaceholderConfig = (user, pass) => {
-    return !user || !pass || user.includes('your_email') || pass.includes('your_app_password');
-};
-
 const sendEmail = async (options) => {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -197,24 +193,22 @@ const loginUser = async (req, res) => {
 
             console.log(`✉️ EMAIL OTP FOR ${cleanIdentifier}: ${generatedOtp}`);
 
-            const hasEmailPass = !isPlaceholderConfig(process.env.EMAIL_USER, process.env.EMAIL_PASS);
-            let emailSent = false;
-            
-            if (hasEmailPass) {
-                const result = await sendEmail({
-                    email: cleanIdentifier,
-                    subject: 'Gold Desk - Your Login OTP',
-                    message: `Your login OTP is ${generatedOtp}. It is valid for 90 seconds.`
+            const result = await sendEmail({
+                email: cleanIdentifier,
+                subject: 'Gold Desk - Your Login OTP',
+                message: `Your login OTP is ${generatedOtp}. It is valid for 90 seconds.`
+            });
+
+            if (!result.success) {
+                return res.status(500).json({ 
+                    message: 'OTP delivery failed. Please ensure your email configuration is valid (App Passwords required for Gmail).' 
                 });
-                emailSent = result.success;
             }
 
             return res.json({
-                message: emailSent ? 'OTP sent via Email' : (hasEmailPass ? 'Email delivery failed. Using fallback.' : 'Email not configured. Using Demo Mode.'),
+                message: 'OTP sent via Email',
                 authMethod: 'email',
-                loginIdentifier: cleanIdentifier,
-                devOtp: emailSent ? null : generatedOtp,
-                showOtpLocally: !emailSent
+                loginIdentifier: cleanIdentifier
             });
         } else {
             let formattedPhone = cleanIdentifier;
@@ -353,16 +347,16 @@ const forgotPasswordRequest = async (req, res) => {
 
         console.log(`✉️ FORGOT PASSWORD OTP (Sent to ${sendToEmail}): ${generatedOtp}`);
         
-        const hasEmailPass = !isPlaceholderConfig(process.env.EMAIL_USER, process.env.EMAIL_PASS);
-        let emailSent = false;
+        const result = await sendEmail({
+            email: sendToEmail,
+            subject: 'Gold Desk - Password Reset OTP',
+            message: `Your OTP for resetting your Gold Desk password is ${generatedOtp}. It is valid for 90 seconds.`
+        });
 
-        if (hasEmailPass) {
-            const result = await sendEmail({
-                email: sendToEmail,
-                subject: 'Gold Desk - Password Reset OTP',
-                message: `Your OTP for resetting your Gold Desk password is ${generatedOtp}. It is valid for 90 seconds.`
+        if (!result.success) {
+            return res.status(500).json({ 
+                message: 'Failed to send reset OTP to your recovery email.' 
             });
-            emailSent = result.success;
         }
 
         // Return masked recovery email hint (e.g. jo***@gmail.com)
@@ -370,11 +364,9 @@ const forgotPasswordRequest = async (req, res) => {
         const maskedEmail = user.slice(0, 2) + '***@' + domain;
 
         res.json({ 
-            message: emailSent ? 'OTP sent to your recovery email' : (hasEmailPass ? 'Email delivery failed. Using fallback.' : 'Email not configured. Using Demo Mode.'), 
+            message: 'OTP sent to your recovery email', 
             recoveryEmail: maskedEmail,
-            userId: userDoc.id, // pass userId to use in reset step
-            devOtp: emailSent ? null : generatedOtp,
-            showOtpLocally: !emailSent
+            userId: userDoc.id // pass userId to use in reset step
         });
     } catch (error) {
         console.error("Forgot password request error:", error);
