@@ -35,7 +35,14 @@ const ForgotPassword = () => {
             // Clear old OTP if this is a resend
             setValue('otp', '');
 
-            if (res.data.devOtp) {
+            if (res.data.showOtpLocally) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Email Delivery Failed',
+                    text: `Your email server configuration is incomplete. For testing, your OTP is: ${res.data.devOtp}`,
+                    confirmButtonColor: 'var(--accent-primary)'
+                });
+            } else if (res.data.devOtp) {
                 Swal.fire({
                     icon: 'info',
                     title: 'Demo Environment',

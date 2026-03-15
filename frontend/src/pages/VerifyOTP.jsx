@@ -60,7 +60,14 @@ const VerifyOTP = () => {
                 }
             } else {
                 const res = await login(loginIdentifier, password);
-                if (res.devOtp) {
+                if (res.showOtpLocally) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Email Delivery Failed',
+                        text: `Your email server configuration is incomplete. For testing, your OTP is: ${res.devOtp}`,
+                        confirmButtonColor: 'var(--accent-primary)'
+                    });
+                } else if (res.devOtp) {
                     Swal.fire({
                         icon: 'info',
                         title: 'Demo Environment',
