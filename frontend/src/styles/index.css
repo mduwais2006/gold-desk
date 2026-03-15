@@ -95,13 +95,27 @@ body {
   width: var(--sidebar-width);
   height: 100vh;
   position: fixed;
-  left: 0;
   top: 0;
+  left: 0;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border-color);
   z-index: 1000;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-soft) transparent;
 }
+
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--accent-soft);
+  border-radius: 10px;
+}
+
 
 .main-content {
   margin-left: var(--sidebar-width);
@@ -143,14 +157,30 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 60px;
+    height: 70px;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
     z-index: 999;
     align-items: center;
-    padding: 0 1rem;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  /* Three Dots Menu Icon Container */
+  .ellipsis-menu {
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background 0.2s;
+    color: var(--accent-primary);
+  }
+
+  .ellipsis-menu:hover {
+    background: var(--accent-soft);
   }
 }
+
 
 /* --- High-End Glass Panels --- */
 .glass-panel {
@@ -165,10 +195,34 @@ body {
 }
 
 [data-theme='dark'] .glass-panel {
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.9));
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-  border-color: var(--border-color); /* Keep dark theme border color */
+  background: linear-gradient(145deg, #050505, #000000);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.05);
 }
+
+/* Dark Mode Background Fixes (Overriding Bootstrap defaults) */
+[data-theme='dark'] .bg-light,
+[data-theme='dark'] .bg-light-subtle,
+[data-theme='dark'] .bg-warning-subtle,
+[data-theme='dark'] .bg-success-subtle,
+[data-theme='dark'] .bg-primary-subtle,
+[data-theme='dark'] .bg-info-subtle,
+[data-theme='dark'] .bg-danger-subtle,
+[data-theme='dark'] .modal-content,
+[data-theme='dark'] .alert-info,
+[data-theme='dark'] .alert-success,
+[data-theme='dark'] .alert-warning {
+  background-color: #0c0c0c !important;
+  background-image: none !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  color: var(--text-primary) !important;
+}
+
+
+[data-theme='dark'] .alert-info { border-left: 4px solid #3b82f6 !important; }
+[data-theme='dark'] .alert-success { border-left: 4px solid #10b981 !important; }
+[data-theme='dark'] .alert-warning { border-left: 4px solid #f59e0b !important; }
+
 
 .glass-panel:hover {
   transform: translateY(-2px);

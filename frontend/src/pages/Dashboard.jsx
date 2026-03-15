@@ -118,7 +118,8 @@ const Dashboard = () => {
                                 <div className="glass-panel p-4 h-100 border-0 d-flex flex-column gap-3">
                                     <h5 className="fw-bold mb-2">Entry Breakdown</h5>
 
-                                    <div className="p-3 rounded bg-light d-flex justify-content-between align-items-center" style={{ background: 'var(--bg-primary) !important' }}>
+                                    <div className="p-3 rounded bg-light-subtle d-flex justify-content-between align-items-center">
+
                                         <div className="d-flex align-items-center gap-2">
                                             <div className="rounded-circle bg-warning" style={{ width: 12, height: 12 }}></div>
                                             <span className="fw-semibold text-secondary">Gold Items</span>
@@ -126,7 +127,8 @@ const Dashboard = () => {
                                         <span className="fw-bold text-high-contrast">₹ {stats?.goldSales?.toLocaleString('en-IN') || '0'}</span>
                                     </div>
 
-                                    <div className="p-3 rounded bg-light d-flex justify-content-between align-items-center" style={{ background: 'var(--bg-primary) !important' }}>
+                                    <div className="p-3 rounded bg-light-subtle d-flex justify-content-between align-items-center">
+
                                         <div className="d-flex align-items-center gap-2">
                                             <div className="rounded-circle bg-secondary" style={{ width: 12, height: 12 }}></div>
                                             <span className="fw-semibold text-secondary">Silver Items</span>

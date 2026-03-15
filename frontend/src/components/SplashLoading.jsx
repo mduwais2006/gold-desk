@@ -49,39 +49,27 @@ const SplashLoading = ({ onComplete }) => {
                 className="text-center position-relative d-flex flex-column align-items-center"
                 style={{ zIndex: 10 }}
             >
-                {/* Logo Inside Rotating Ring */}
-                <div className="position-relative d-flex align-items-center justify-content-center mb-5" style={{ width: '180px', height: '180px' }}>
+                {/* Minimalist Logo Header */}
+
                     <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                        className="position-absolute"
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            borderRadius: '50%',
-                            border: '3px solid transparent',
-                            borderTop: '3px solid var(--accent-primary)',
-                            borderRight: '3px solid var(--accent-primary)',
-                            opacity: 0.6
-                        }}
-                    />
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.3, duration: 1 }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, ease: "easeOut" }}
                     >
                         <img 
                             src="/logo.png" 
                             alt="Gold Desk Logo" 
                             style={{ 
-                                width: '100px', 
-                                height: '100px',
+                                width: '110px', 
+                                height: '110px',
                                 objectFit: 'contain',
-                                filter: 'drop-shadow(0 0 10px rgba(212, 175, 55, 0.4))'
+                                filter: 'drop-shadow(0 0 15px rgba(212, 175, 55, 0.25))',
+                                marginBottom: '1rem'
                             }} 
                         />
                     </motion.div>
-                </div>
+
+
 
 
 

@@ -477,7 +477,8 @@ const Settings = () => {
                                     </div>
                                     <div className="col-12 mt-3">
                                         <label className="form-label small text-secondary fw-semibold">Login Identity (Cannot Edit Here)</label>
-                                        <input type="text" className="form-control form-control-glass text-muted bg-light" value={user?.email || user?.phone || ''} readOnly />
+                                        <input type="text" className="form-control form-control-glass text-muted bg-light-subtle" value={user?.email || user?.phone || ''} readOnly />
+
                                     </div>
                                     <hr className="my-4 text-light" />
                                     <h6 className="fw-bold mb-3 text-secondary">Shop Details</h6>
@@ -540,7 +541,8 @@ const Settings = () => {
                                         </div>
                                     </div>
                                     {profileData.gstEnabled && (
-                                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 p-2 bg-white rounded border">
+                                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 p-3 bg-light-subtle rounded border shadow-sm">
+
                                             <label className="form-label small fw-bold text-secondary mb-1">Default GST Percentage (%)</label>
                                             <div className="input-group input-group-sm mb-1" style={{ maxWidth: '120px' }}>
                                                 <input type="number" className="form-control" value={profileData.gstPercentage} onChange={e => setProfileData({ ...profileData, gstPercentage: e.target.value })} />
@@ -588,7 +590,8 @@ const Settings = () => {
                                                     <div className="position-relative">
                                                         <input 
                                                             type="email" 
-                                                            className="form-control form-control-glass bg-light fw-bold" 
+                                                            className="form-control form-control-glass bg-light-subtle fw-bold" 
+
                                                             style={{ cursor: 'pointer', color: 'var(--text-secondary)' }}
                                                             value={recoveryEmail || user.recoveryEmail} 
                                                             readOnly 
