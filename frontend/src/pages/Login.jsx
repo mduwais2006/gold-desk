@@ -122,9 +122,10 @@ const Login = () => {
                     </div>
 
                     <div id="sign-in-button"></div>
-                    <button type="submit" className="btn-gold w-100 mt-2" disabled={isLoading}>
+                    <button type="submit" className="btn btn-advanced w-100 mt-2" disabled={isLoading}>
                         {isLoading ? 'Authenticating...' : 'Sign In'}
                     </button>
+
 
                     <div className="text-center mt-3">
                         <p className="small text-secondary mb-0">
