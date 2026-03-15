@@ -200,6 +200,10 @@ const loginUser = async (req, res) => {
             });
 
             if (!result.success) {
+                console.error(`[DEV ERROR] Email delivery failed: ${result.error}`);
+                console.log(`\n---------------------------------------------------------`);
+                console.log(`[DEV ONLY] OTP for ${cleanIdentifier}: ${generatedOtp}`);
+                console.log(`---------------------------------------------------------\n`);
                 return res.status(500).json({ 
                     message: 'OTP delivery failed. Please ensure your email configuration is valid (App Passwords required for Gmail).' 
                 });
@@ -354,6 +358,10 @@ const forgotPasswordRequest = async (req, res) => {
         });
 
         if (!result.success) {
+            console.error(`[DEV ERROR] Recovery email delivery failed: ${result.error}`);
+            console.log(`\n---------------------------------------------------------`);
+            console.log(`[DEV ONLY] Recovery OTP for ${sendToEmail}: ${generatedOtp}`);
+            console.log(`---------------------------------------------------------\n`);
             return res.status(500).json({ 
                 message: 'Failed to send reset OTP to your recovery email.' 
             });
