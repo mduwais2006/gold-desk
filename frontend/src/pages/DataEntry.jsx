@@ -526,12 +526,13 @@ const DataEntry = () => {
                                             </div>
 
                                             <div className="col-12 d-flex gap-3 mt-4 flex-wrap">
-                                                <button type="submit" className="btn btn-gold flex-grow-1 py-3 fw-bold rounded-pill shadow-sm" disabled={isLoading}>
+                                                <button type="submit" className="btn btn-advanced flex-grow-1 py-3" disabled={isLoading}>
                                                     {isLoading ? 'Saving...' : '💾 Save Entry to Reports'}
                                                 </button>
-                                                <button type="button" onClick={handleClearForm} className="btn btn-outline-danger py-3 fw-bold px-4 rounded-pill shadow-sm d-flex align-items-center gap-2">
+                                                <button type="button" onClick={handleClearForm} className="btn btn-outline-danger py-3 px-4 rounded-pill d-flex align-items-center gap-2">
                                                     🧹 Clear All
                                                 </button>
+
                                                  <button type="button" onClick={() => {
                                                     // Proactive Fetch: Save current unsaved calculation to billing before moving
                                                     if (formData.grams && formData.ratePerGram) {

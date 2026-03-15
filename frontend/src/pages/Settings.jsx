@@ -500,10 +500,11 @@ const Settings = () => {
                                 </div>
 
                                 {isEditingProfile && (
-                                    <button type="button" className="btn-gold mt-4 w-100" onClick={handleProfileUpdate} disabled={isLoading}>
+                                    <button type="button" className="btn btn-advanced mt-4 w-100" onClick={handleProfileUpdate} disabled={isLoading}>
                                         {isLoading ? 'Saving...' : '💾 Save Profile'}
                                     </button>
                                 )}
+
                             </div>
                         </div>
                     )}
@@ -557,10 +558,11 @@ const Settings = () => {
                                 </div>
 
                                 {isEditingBilling && (
-                                    <button type="button" className="btn-gold w-100 mt-2" onClick={handleProfileUpdate} disabled={isLoading}>
+                                    <button type="button" className="btn btn-advanced w-100 mt-2" onClick={handleProfileUpdate} disabled={isLoading}>
                                         {isLoading ? 'Saving...' : '💾 Save Setup'}
                                     </button>
                                 )}
+
                             </div>
                         </div>
                     )}

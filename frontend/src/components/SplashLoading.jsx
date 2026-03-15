@@ -51,23 +51,23 @@ const SplashLoading = ({ onComplete }) => {
             >
                 {/* Minimalist Logo Header */}
 
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                    >
-                        <img 
-                            src="/logo.png" 
-                            alt="Gold Desk Logo" 
-                            style={{ 
-                                width: '110px', 
-                                height: '110px',
-                                objectFit: 'contain',
-                                filter: 'drop-shadow(0 0 15px rgba(212, 175, 55, 0.25))',
-                                marginBottom: '1rem'
-                            }} 
-                        />
-                    </motion.div>
+                    <motion.div 
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="mb-4 position-relative"
+                >
+                    <img 
+                        src="/logo.png" 
+                        alt="Logo" 
+                        className="logo-img"
+                        style={{ 
+                            width: 'min(140px, 35vw)', 
+                            height: 'min(140px, 35vw)', 
+                            filter: 'drop-shadow(0 0 20px rgba(212, 175, 55, 0.4))'
+                        }} 
+                    />
+                </motion.div>
 
 
 

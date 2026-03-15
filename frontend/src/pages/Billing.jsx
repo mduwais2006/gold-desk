@@ -311,23 +311,24 @@ const Billing = () => {
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.5 }}
-                        className="text-center bg-white p-5 rounded-5 shadow-lg border border-danger-subtle position-relative overflow-hidden"
+                        className="text-center glass-panel p-5 rounded-5 shadow-lg border-0 position-relative overflow-hidden"
                         style={{ maxWidth: '500px' }}
                     >
-                        <div className="position-absolute top-0 start-0 w-100 bg-danger" style={{ height: '6px' }}></div>
-                        <h1 className="display-1 mb-4" style={{ filter: 'drop-shadow(0px 10px 10px rgba(0,0,0,0.1))' }}>📠🔌</h1>
-                        <h3 className="fw-bolder mb-3 text-uppercase tracking-tighter">Hardware Lock</h3>
-                        <p className="text-secondary mb-4 fs-6">
-                            To maintain premium security and synchronous performance, the Billing Engine is locked until your <b className="text-dark">Physical POS Printer</b> is officially connected.
+                        <div className="position-absolute top-0 start-0 w-100 bg-warning" style={{ height: '6px' }}></div>
+                        <h1 className="display-1 mb-4" style={{ filter: 'drop-shadow(0px 10px 15px rgba(212,175,55,0.3))' }}>📠🔌</h1>
+                        <h3 className="fw-900 mb-3 text-uppercase tracking-tighter text-black-force">Hardware Lock</h3>
+                        <p className="text-secondary mb-4 fs-6 fw-bold">
+                            To maintain premium security and synchronous performance, the Billing Engine is locked until your <b className="text-accent-primary">Physical POS Printer</b> is officially connected.
                         </p>
                         <button
-                            className="btn btn-dark btn-lg w-100 rounded-pill py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2"
+                            className="btn btn-advanced w-100 py-3 d-flex align-items-center justify-content-center gap-2"
                             onClick={() => navigate('/settings')}
                         >
-                            <span className="spinner-grow spinner-grow-sm text-warning"></span>
+                            <span className="spinner-grow spinner-grow-sm text-dark"></span>
                             Connect Machine in Settings
                         </button>
                     </motion.div>
+
                 </div>
             </div>
         );
@@ -588,11 +589,12 @@ const Billing = () => {
                                 <motion.button
                                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                                     form="billingForm" type="submit"
-                                    className={`btn ${paymentMode === 'upi' ? 'btn-primary' : 'btn-dark'} w-100 py-3 fw-bold fs-5 shadow-sm rounded-pill text-white`}
+                                    className="btn btn-advanced w-100 py-3 fs-5"
                                     disabled={isSaving || calculatedItems.length === 0}
                                 >
                                     {isSaving ? 'Processing Securely...' : `Generate Bill (${paymentMode.toUpperCase()}) 🧾`}
                                 </motion.button>
+
                             ) : (
                                 <motion.div
                                     className={`btn w-100 py-3 fw-bold fs-5 shadow-sm rounded-pill position-relative overflow-hidden ${isSensing ? 'btn-primary text-white' : 'btn-secondary text-light opacity-50'}`}

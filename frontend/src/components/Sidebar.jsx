@@ -111,14 +111,14 @@ const Sidebar = () => {
                             <img 
                                 src="/logo.png" 
                                 alt="Gold Data Entry Logo" 
+                                className="logo-img mb-3"
                                 style={{ 
-                                    width: '80px', 
-                                    height: '80px', 
-                                    objectFit: 'contain', 
-                                    filter: 'drop-shadow(0 0 8px rgba(212, 175, 55, 0.2))',
-                                    marginBottom: '1rem' 
+                                    width: '90px', 
+                                    height: '90px', 
+                                    filter: 'drop-shadow(0 0 10px rgba(212, 175, 55, 0.4))'
                                 }} 
                             />
+
                             <h3 className="fw-900 mb-0" style={{ 
                                 color: 'var(--accent-primary)', 
                                 fontSize: '1.2rem', 
@@ -159,7 +159,7 @@ const Sidebar = () => {
 
                 </div>
 
-                <div className="mt-auto">
+                <div className="mt-auto" style={{ marginBottom: '3rem' }}>
                     <div className="p-3 rounded glass-panel mb-3 text-center border-0 d-none d-lg-block">
                         <p className="mb-1 fw-bold small text-truncate">{user?.name}</p>
                         <p className="mb-0 text-secondary" style={{ fontSize: '0.7rem' }}>{user?.email}</p>
@@ -167,7 +167,9 @@ const Sidebar = () => {
                     <button onClick={handleLogout} className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 font-monospace fw-semibold py-2">
                         <Icons.Logout /> <span className="nav-text">Logout</span>
                     </button>
+                    <div className="mb-2"></div> {/* Extra space at absolute bottom */}
                 </div>
+
             </div>
         </>
 

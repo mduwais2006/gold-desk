@@ -40,66 +40,62 @@ const About = () => {
                 </div>
 
                 <div className="row g-4 animate-fade-in">
-                    {/* Data Retention Policy - NEW */}
-                    <motion.div className="col-12" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                        <div className="glass-panel p-4 border-0 mb-2 border-start border-4 border-info">
-                            <h5 className="fw-bolder mb-3 help-heading d-flex align-items-center gap-2">
-                                <span className="fs-4">📊</span> Report Data Policy
-                            </h5>
-                            <p className="help-text mb-2">
-                                To maintain peak performance, the <strong>Report Section</strong> displays transactions from the <strong>last 6 months only</strong>. 
-                            </p>
-                            <p className="help-text mb-0 fw-bold">
-                                Recommendation: We strongly advise users to export their reports month-wise to Excel or PDF format for permanent offline storage.
-                            </p>
-                        </div>
-                    </motion.div>
-
-                    {/* Introduction */}
-                    <motion.div className="col-12" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-                        <div className="glass-panel p-4 border-0 shadow-sm rounded-4">
-                            <h5 className="fw-bolder mb-3 help-heading d-flex align-items-center gap-2">
-                                <span className="fs-4">✨</span> Introduction
+                    {/* Platform Statistics Overview */}
+                    <motion.div className="col-12" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                        <div className="glass-panel p-4 border-0 mb-2 border-start border-4 border-warning">
+                            <h5 className="fw-900 mb-3 help-heading d-flex align-items-center gap-2">
+                                <span className="fs-4">🏆</span> Gold Data Entry: Enterprise Edition
                             </h5>
                             <p className="help-text mb-0">
-                                Welcome to Gold Desk Help Center. Here you can find answers and guidance on how to use our premier jewelry management platform. Gold Desk allows you to effortlessly manage your shop’s daily gold rates, compute complex billing with making charges and GST, securely store client data in Firebase, and optionally print thermal receipts instantly via Bluetooth POS machines.
+                                You are using the latest <strong>v2.4.0 Engine</strong>. This platform is architected for maximum speed, security, and hardware precision. Manage your jewelry shop's daily operations with real-time analytics and seamless POS integration.
                             </p>
                         </div>
                     </motion.div>
 
-                    {/* How to Use the Website */}
-                    <motion.div className="col-md-6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+                    {/* How It Works - Core Modules */}
+                    <motion.div className="col-md-4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                         <div className="glass-panel p-4 border-0 shadow-sm rounded-4 h-100">
-                            <h5 className="fw-bolder mb-3 help-heading d-flex align-items-center gap-2">
-                                <span className="fs-4">🚀</span> How to Use the Website
-                            </h5>
-                            <ol className="help-text ps-3">
-                                <li><strong>Sign up:</strong> Create a new master account.</li>
-                                <li><strong>Verify:</strong> Securely confirm your OTP via mobile.</li>
-                                <li><strong>Login:</strong> Access the secure Dashboard.</li>
-                                <li><strong>Setup Settings:</strong> Connect your Bluetooth POS printer & QR Code.</li>
-                                <li><strong>Billing:</strong> Instantly generate and print customer invoices.</li>
-                                <li><strong>Data Entry & Management:</strong> Record calculations and export to Excel/PDF.</li>
-                            </ol>
+                            <div className="fs-1 mb-3">📈</div>
+                            <h6 className="fw-900 mb-2 text-uppercase tracking-wider">Dashboard</h6>
+                            <p className="help-text small">
+                                Track your daily revenue, customer growth, and item breakdowns. Our predictive growth analysis compares your present and last month performance automatically.
+                            </p>
                         </div>
                     </motion.div>
 
-                    {/* Account Help */}
-                    <motion.div className="col-md-6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+                    <motion.div className="col-md-4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                         <div className="glass-panel p-4 border-0 shadow-sm rounded-4 h-100">
-                            <h5 className="fw-bolder mb-3 help-heading d-flex align-items-center gap-2">
-                                <span className="fs-4">🔐</span> Account Help
-                            </h5>
-                            <ul className="help-text list-unstyled">
-                                <li><strong>Create Account:</strong> Available on the Registration page.</li>
-                                <li><strong>Login Problems:</strong> Ensure mobile number or email matches the registered account exactly.</li>
-                                <li><strong>Change Password:</strong> Go to the <span className="fw-bold">Settings</span> menu and click "Change Login Username / Password via OTP".</li>
-                                <li><strong>Delete Account:</strong> For full compliance, please contact support below to purge all your private Firebase data securely.</li>
-                            </ul>
+                            <div className="fs-1 mb-3">📠</div>
+                            <h6 className="fw-900 mb-2 text-uppercase tracking-wider">Billing Engine</h6>
+                            <p className="help-text small">
+                                Generate professional tax invoices. Connect your <strong>Thermal Bluetooth Printer</strong> in settings to get physical receipts instantly. Supports UPI and Cash modes.
+                            </p>
+                        </div>
+                    </motion.div>
+
+                    <motion.div className="col-md-4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                        <div className="glass-panel p-4 border-0 shadow-sm rounded-4 h-100">
+                            <div className="fs-1 mb-3">📊</div>
+                            <h6 className="fw-900 mb-2 text-uppercase tracking-wider">Data & Reports</h6>
+                            <p className="help-text small">
+                                Use the <strong>Jewelry Calculator</strong> for quick entries. Filter records by date/month and export your business data securely to <strong>Excel (XLSX)</strong> or <strong>PDF</strong>.
+                            </p>
+                        </div>
+                    </motion.div>
+
+                    {/* Important Policies */}
+                    <motion.div className="col-12" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+                        <div className="glass-panel p-4 border-0 bg-info bg-opacity-10">
+                            <h6 className="fw-900 text-info text-uppercase mb-3"><i className="bi bi-shield-lock-fill me-2"></i> Data Retention & Performance Policy</h6>
+                            <p className="help-text small mb-0">
+                                To ensure sub-second loading speeds (Google-Standard), the <strong>Reports Section</strong> displays transactions from the <strong>last 6 months only</strong>. 
+                                For permanent record keeping, please use the <strong>Export to Excel</strong> feature at the end of every month.
+                            </p>
                         </div>
                     </motion.div>
 
                     {/* FAQ */}
+
                     <motion.div className="col-12" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
                         <div className="glass-panel p-4 border-0 shadow-sm rounded-4">
                             <h5 className="fw-bolder mb-4 help-heading d-flex align-items-center gap-2">
@@ -110,42 +106,43 @@ const About = () => {
                                 <div className="accordion-item border-bottom mb-2 rounded overflow-hidden" style={{ transition: 'all 0.3s' }}>
                                     <h2 className="accordion-header" id="faq1">
                                         <button className={`accordion-button bg-transparent fw-bold border-0 shadow-none d-flex justify-content-between align-items-center w-100 p-3 text-start accordion-button-black ${activeFaq !== 1 ? 'collapsed' : ''}`} type="button" onClick={() => toggleFaq(1)}>
-                                            <span>How do I create an invoice quickly?</span>
+                                            <span>Why is the Billing Section locked?</span>
                                             <i className={`bi bi-chevron-down`} style={{ transition: 'transform 0.3s', transform: activeFaq === 1 ? 'rotate(180deg)' : 'rotate(0)' }}></i>
                                         </button>
                                     </h2>
                                     <div id="collapse1" className={`accordion-collapse`} style={{ maxHeight: activeFaq === 1 ? '200px' : '0', overflow: 'hidden', transition: 'max-height 0.3s ease-in-out' }}>
                                         <div className="accordion-body help-text small pt-0 px-3 pb-3">
-                                            Go to the Billing section, add your items (either manually or from Data Entry drafts), apply optional discounts or GST, and click 'Print Bluetooth Receipt' to instantly obtain your invoice. You can also save the invoice as a PDF.
+                                            The <strong>Hardware Lock</strong> activates if no Bluetooth Printer is connected. Go to Settings &gt; Billing Machine to connect your device and enable the Billing Engine.
                                         </div>
                                     </div>
                                 </div>
                                 <div className="accordion-item border-bottom mb-2 rounded overflow-hidden" style={{ transition: 'all 0.3s' }}>
                                     <h2 className="accordion-header" id="faq2">
                                         <button className={`accordion-button bg-transparent fw-bold border-0 shadow-none d-flex justify-content-between align-items-center w-100 p-3 text-start accordion-button-black ${activeFaq !== 2 ? 'collapsed' : ''}`} type="button" onClick={() => toggleFaq(2)}>
-                                            <span>How do I export my shop data to Excel?</span>
+                                            <span>How do I export GST-ready reports?</span>
                                             <i className={`bi bi-chevron-down`} style={{ transition: 'transform 0.3s', transform: activeFaq === 2 ? 'rotate(180deg)' : 'rotate(0)' }}></i>
                                         </button>
                                     </h2>
                                     <div id="collapse2" className={`accordion-collapse`} style={{ maxHeight: activeFaq === 2 ? '200px' : '0', overflow: 'hidden', transition: 'max-height 0.3s ease-in-out' }}>
                                         <div className="accordion-body help-text small pt-0 px-3 pb-3">
-                                            Navigate to the Data Entry section. Click on 'View Reports' and use the filters provided. Then click the Excel or PDF button to securely download the current data directly to your device.
+                                            Navigate to <strong>Data & Reports</strong>, set your filters (Month/Year), and click <strong>Excel (XLSX)</strong>. The generated file includes Weight, Rate, GST %, and Final Totals automatically.
                                         </div>
                                     </div>
                                 </div>
                                 <div className="accordion-item border-bottom mb-2 rounded overflow-hidden" style={{ transition: 'all 0.3s' }}>
                                     <h2 className="accordion-header" id="faq3">
                                         <button className={`accordion-button bg-transparent fw-bold border-0 shadow-none d-flex justify-content-between align-items-center w-100 p-3 text-start accordion-button-black ${activeFaq !== 3 ? 'collapsed' : ''}`} type="button" onClick={() => toggleFaq(3)}>
-                                            <span>Are my invoices auto-saved?</span>
+                                            <span>Are my shop details safe?</span>
                                             <i className={`bi bi-chevron-down`} style={{ transition: 'transform 0.3s', transform: activeFaq === 3 ? 'rotate(180deg)' : 'rotate(0)' }}></i>
                                         </button>
                                     </h2>
                                     <div id="collapse3" className={`accordion-collapse`} style={{ maxHeight: activeFaq === 3 ? '200px' : '0', overflow: 'hidden', transition: 'max-height 0.3s ease-in-out' }}>
                                         <div className="accordion-body help-text small pt-0 px-3 pb-3">
-                                            Currently, Draft Invoices are auto-saved to your browser's local cache. Once you submit a Data Entry form, those logs are securely saved continuously to the centralized Cloud Database.
+                                            Yes. We use <strong>Google Firebase Security Rules</strong> ensuring only YOU can see your data. Your connection is encrypted with modern SSL and Hardware Tokenization.
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     </motion.div>
@@ -218,9 +215,10 @@ const About = () => {
                                             <label className="form-label fw-bold text-secondary small">Description</label>
                                             <textarea className="form-control form-control-glass" rows="4" placeholder="How can we help you?" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} required></textarea>
                                         </div>
-                                        <button type="submit" className="btn btn-gold w-100 d-flex justify-content-center align-items-center gap-2" disabled={loading}>
+                                        <button type="submit" className="btn btn-advanced w-100 d-flex justify-content-center align-items-center gap-2" disabled={loading}>
                                             {loading ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> : <span>Send Message <i className="bi bi-send-fill ms-1"></i></span>}
                                         </button>
+
                                     </form>
                                 </div>
                             </div>
