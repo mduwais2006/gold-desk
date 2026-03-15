@@ -43,7 +43,16 @@ const Login = () => {
                     if (window.recaptchaVerifier) { window.recaptchaVerifier.clear(); window.recaptchaVerifier = null; }
                 }
             } else {
-                toast.success(res.message || 'OTP Sent');
+                if (res.devOtp) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Demo Environment',
+                        text: `Bypassing real email logic. Your fresh OTP is: ${res.devOtp}`,
+                        confirmButtonColor: 'var(--accent-primary)'
+                    });
+                } else {
+                    toast.success(res.message || 'OTP Sent');
+                }
                 navigate('/verify-otp', { state: { loginIdentifier: res.loginIdentifier, authMethod: 'email', password: data.password } });
             }
 

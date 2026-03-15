@@ -7,9 +7,9 @@ import Swal from 'sweetalert2';
 import { auth, setupRecaptcha, signInWithPhoneNumber } from '../utils/firebase';
 
 const VerifyOTP = () => {
-    const { register, handleSubmit, formState: { errors } } = useForm();
+    const { register, handleSubmit, setValue, formState: { errors } } = useForm();
     const [isLoading, setIsLoading] = useState(false);
-    const [timer, setTimer] = useState(60);
+    const [timer, setTimer] = useState(90);
     const { verifyOtp, login } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -53,15 +53,28 @@ const VerifyOTP = () => {
                     const result = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifier);
                     window.confirmationResult = result;
                     toast.success('New SMS Sent to your Mobile!');
-                    setTimer(60);
+                    setTimer(90);
                 } catch (ferr) {
                     toast.error('Firebase SMS Failed. Usually invalid config or phone format.');
                     if (window.recaptchaVerifier) { window.recaptchaVerifier.clear(); window.recaptchaVerifier = null; }
                 }
             } else {
                 const res = await login(loginIdentifier, password);
-                toast.success(res.message || 'New OTP Sent');
-                setTimer(60);
+                if (res.devOtp) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Demo Environment',
+                        text: `Bypassing real email logic. Your fresh OTP is: ${res.devOtp}`,
+                        confirmButtonColor: 'var(--accent-primary)'
+                    });
+                } else {
+                    toast.success(res.message || 'New OTP Sent');
+                }
+                
+                // User requirement: Automatically clear entered data on resend
+                setValue('otp', '');
+                
+                setTimer(90);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to resend OTP');

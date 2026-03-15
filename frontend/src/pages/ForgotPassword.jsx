@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 import api from '../utils/api';
 
 const ForgotPassword = () => {
-    const { register, handleSubmit, watch, formState: { errors } } = useForm();
+    const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm();
     const [isLoading, setIsLoading] = useState(false);
     const [step, setStep] = useState(1); // 1: Recovery Email, 2: OTP + New Password
     const [enteredEmail, setEnteredEmail] = useState('');
@@ -29,10 +30,29 @@ const ForgotPassword = () => {
             setEnteredEmail(email);
             setRecoveryEmailHint(res.data.recoveryEmail);
             setStep(2);
-            setResendTimer(30);
-            toast.success('OTP sent to your recovery email!');
+            setResendTimer(90);
+            
+            // Clear old OTP if this is a resend
+            setValue('otp', '');
+
+            if (res.data.devOtp) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Demo Environment',
+                    text: `Bypassing real email logic. Your fresh OTP is: ${res.data.devOtp}`,
+                    confirmButtonColor: 'var(--accent-primary)'
+                });
+            } else {
+                toast.success('OTP sent to your recovery email!');
+            }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to find account. Check your recovery email address.');
+            const errorMsg = error.response?.data?.message || 'Failed to find account. Check your recovery email address.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Account Not Found',
+                text: errorMsg,
+                confirmButtonColor: 'var(--accent-primary)'
+            });
         } finally {
             setIsLoading(false);
         }
@@ -46,10 +66,22 @@ const ForgotPassword = () => {
                 otp: data.otp,
                 newPassword: data.newPassword
             });
-            toast.success('Password reset successfully! Please log in with your new password.');
-            navigate('/login');
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: 'Password reset successfully! Please log in with your new password.',
+                confirmButtonColor: 'var(--accent-primary)'
+            }).then(() => {
+                navigate('/login');
+            });
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Invalid OTP or Reset Failed');
+            const errorMsg = error.response?.data?.message || 'Invalid OTP or Reset Failed';
+            Swal.fire({
+                icon: 'error',
+                title: 'Reset Failed',
+                text: errorMsg.charAt(0).toUpperCase() + errorMsg.slice(1),
+                confirmButtonColor: 'var(--accent-primary)'
+            });
         } finally {
             setIsLoading(false);
         }

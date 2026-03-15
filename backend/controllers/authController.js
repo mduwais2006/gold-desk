@@ -27,7 +27,8 @@ const sendEmail = async (options) => {
     try {
         await transporter.sendMail(mailOptions);
     } catch (e) {
-        console.error('Failed to send real email');
+        console.error('Failed to send real email:', e.message);
+        throw new Error('Failed to send OTP to email. Please check server email configurations.');
     }
 };
 
@@ -186,21 +187,25 @@ const loginUser = async (req, res) => {
                 loginIdentifier: cleanIdentifier,
                 status: 'pending',
                 createdAt: new Date().getTime(),
-                expiresAt: new Date().getTime() + 300000 // 5 minutes
+                expiresAt: new Date().getTime() + 90000 // 90 seconds
             });
 
             console.log(`✉️ EMAIL OTP FOR ${cleanIdentifier}: ${generatedOtp}`);
 
-            await sendEmail({
-                email: cleanIdentifier,
-                subject: 'Gold Desk - Your Login OTP',
-                message: `Your login OTP is ${generatedOtp}. It is valid for 5 minutes.`
-            });
+            const hasEmailPass = !!process.env.EMAIL_PASS;
+            if (hasEmailPass) {
+                await sendEmail({
+                    email: cleanIdentifier,
+                    subject: 'Gold Desk - Your Login OTP',
+                    message: `Your login OTP is ${generatedOtp}. It is valid for 90 seconds.`
+                });
+            }
 
             return res.json({
-                message: 'OTP sent via Email',
+                message: hasEmailPass ? 'OTP sent via Email' : 'Testing Environment: Email bypassed',
                 authMethod: 'email',
-                loginIdentifier: cleanIdentifier
+                loginIdentifier: cleanIdentifier,
+                devOtp: hasEmailPass ? null : generatedOtp
             });
         } else {
             let formattedPhone = cleanIdentifier;
@@ -334,24 +339,29 @@ const forgotPasswordRequest = async (req, res) => {
             type: 'forgot_password',
             status: 'pending',
             createdAt: new Date().getTime(),
-            expiresAt: new Date().getTime() + 300000 // 5 minutes
+            expiresAt: new Date().getTime() + 90000 // 90 seconds
         });
 
         console.log(`✉️ FORGOT PASSWORD OTP (Sent to ${sendToEmail}): ${generatedOtp}`);
-        await sendEmail({
-            email: sendToEmail,
-            subject: 'Gold Desk - Password Reset OTP',
-            message: `Your OTP for resetting your Gold Desk password is ${generatedOtp}. It is valid for 5 minutes.`
-        });
+        
+        const hasEmailPass = !!process.env.EMAIL_PASS;
+        if (hasEmailPass) {
+            await sendEmail({
+                email: sendToEmail,
+                subject: 'Gold Desk - Password Reset OTP',
+                message: `Your OTP for resetting your Gold Desk password is ${generatedOtp}. It is valid for 90 seconds.`
+            });
+        }
 
         // Return masked recovery email hint (e.g. jo***@gmail.com)
         const [user, domain] = sendToEmail.split('@');
         const maskedEmail = user.slice(0, 2) + '***@' + domain;
 
         res.json({ 
-            message: 'OTP sent to your recovery email', 
+            message: hasEmailPass ? 'OTP sent to your recovery email' : 'Testing Environment: Email bypassed', 
             recoveryEmail: maskedEmail,
-            userId: userDoc.id // pass userId to use in reset step
+            userId: userDoc.id, // pass userId to use in reset step
+            devOtp: hasEmailPass ? null : generatedOtp
         });
     } catch (error) {
         console.error("Forgot password request error:", error);
