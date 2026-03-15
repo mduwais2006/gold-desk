@@ -83,25 +83,42 @@ const Sidebar = () => {
             {/* Sidebar Overlay for Mobile */}
             {isOpen && <div className="fixed-inset d-lg-none" style={{ zIndex: 998, background: 'rgba(0,0,0,0.5)', position: 'fixed', inset: 0 }} onClick={() => setIsOpen(false)}></div>}
 
-            <div className={`sidebar d-flex flex-column justify-content-between ${isOpen ? 'open' : ''}`}>
+            <div className={`sidebar d-flex flex-column justify-content-between ${isOpen ? 'open' : ''}`} style={{ paddingTop: '2.5rem' }}>
                 <div>
-                    <div className="mb-4 text-center">
-                        {user?.shopLogo ? (
-                            <img src={user.shopLogo} alt="Shop Logo" style={{ maxHeight: '60px', objectFit: 'contain', marginBottom: '10px' }} />
-                        ) : (
-                            <h3 className="fw-900 mb-0" style={{ color: 'var(--accent-primary)', fontSize: '1.5rem', letterSpacing: '1px' }}>{user?.shopName || 'GOLD DESK'}</h3>
-                        )}
-                        <div className="d-none d-lg-block">
-                            {user?.shopLogo && <h6 className="fw-bold mt-2 mb-0">{user?.shopName}</h6>}
+                    <div className="mb-5 text-center px-3">
+                        {/* Premium Brand Header */}
+                        <div className="brand-box mb-4">
+                            <img 
+                                src="/logo.png" 
+                                alt="Gold Data Entry Logo" 
+                                style={{ 
+                                    width: '80px', 
+                                    height: '80px', 
+                                    objectFit: 'contain', 
+                                    filter: 'drop-shadow(0 0 8px rgba(212, 175, 55, 0.2))',
+                                    marginBottom: '1rem' 
+                                }} 
+                            />
+                            <h3 className="fw-900 mb-0" style={{ 
+                                color: 'var(--accent-primary)', 
+                                fontSize: '1.2rem', 
+                                letterSpacing: '2px',
+                                textTransform: 'uppercase' 
+                            }}>
+                                {user?.shopName || 'GOLD DATA ENTRY'}
+                            </h3>
+                            <div className="small opacity-50 fw-bold mt-1" style={{ letterSpacing: '1px', fontSize: '0.65rem' }}>PREMIUM JEWELRY DESK</div>
                         </div>
                     </div>
 
-                    <div className="mb-4 p-3 rounded glass-panel text-center border-0 shadow-sm animate-fade-in d-none d-lg-block" style={{ background: 'rgba(212, 175, 55, 0.05)' }}>
+                    <div className="mb-5 p-3 mx-3 rounded glass-panel text-center border-0 shadow-sm animate-fade-in d-none d-lg-block" style={{ background: 'rgba(212, 175, 55, 0.05)' }}>
+
                         <div className="fw-bold small text-warning mb-1">{formatDate(currentTime)}</div>
                         <div className="fs-5 fw-bold font-monospace" style={{ letterSpacing: '1px' }}>{formatTime(currentTime)}</div>
                     </div>
 
-                    <nav className="nav flex-column gap-2 mt-2">
+                    <nav className="nav flex-column gap-3 mt-4">
+
                         <NavLink to="/" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
                             <Icons.Dashboard /> <span className="nav-text">Dashboard</span>
                         </NavLink>
@@ -115,10 +132,11 @@ const Sidebar = () => {
                         <NavLink to="/about" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
                             <Icons.About /> <span className="nav-text">Help & About</span>
                         </NavLink>
-                        <NavLink to="/settings" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
+                        <NavLink to="/settings" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px', marginBottom: '1rem' }}>
                             <Icons.Settings /> <span className="nav-text">Settings</span>
                         </NavLink>
                     </nav>
+
                 </div>
 
                 <div className="mt-auto">
