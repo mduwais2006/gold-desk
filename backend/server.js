@@ -50,11 +50,24 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/export', require('./routes/exportRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
 
-app.get('/', (req, res) => {
-    res.send('Gold Desk API is running...');
-});
+const path = require('path');
+
+// ... rest of imports ...
 
 const basePort = process.env.PORT || 5000;
+
+// Serve Static Frontend Files
+const frontendBuildPath = path.join(__dirname, '../frontend/dist');
+app.use(express.static(frontendBuildPath));
+
+// Catch-all to handle SPA routing (redirects to index.html)
+app.get('*', (req, res) => {
+    // If request starts with /api, don't serve index.html (it should have been handled by API routes)
+    if (req.url.startsWith('/api/')) {
+        return res.status(404).json({ message: 'API Route Not Found' });
+    }
+    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+});
 
 const startServer = (port) => {
     const server = app.listen(port, () => {
