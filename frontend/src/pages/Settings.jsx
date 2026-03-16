@@ -12,6 +12,13 @@ import { printReceiptBluetooth, resolveDeviceName } from '../utils/printerUtils'
 
 const Settings = () => {
     const { user, setUser, verifyOtp } = useAuth();
+    
+    // Debug: Print username and identity to console
+    console.log("-----------------------------------------");
+    console.log("Current User Identifier:", user?.email || user?.phone);
+    console.log("Current User Name:", user?.name);
+    console.log("-----------------------------------------");
+
     const { connectedDevice, setConnectedDevice, isPrinterActive, setIsPrinterActive, setupDeviceListeners, reconnectDevice } = usePrinter();
     const [darkMode, setDarkMode] = useState(document.documentElement.getAttribute('data-theme') === 'dark');
     const [autoPrintUpi, setAutoPrintUpi] = useState(localStorage.getItem('autoPrintUpi') !== 'false');
@@ -385,8 +392,14 @@ const Settings = () => {
             toast.info('Sending test page...');
             const testPayload = {
                 customerName: 'Hardware Test',
+                mobile: '0000000000',
                 items: [{ itemName: 'Test Connection', weight: '0.000', ratePerGram: 0, price: 0 }],
+                subTotal: 0,
+                gst: 0,
+                gstPercentage: 0,
+                discount: 0,
                 finalTotal: 0,
+                paymentMode: 'Test',
                 shopDetails: { name: user?.shopName || 'Gold Desk Shop', address: 'System Diagnostics' }
             };
             await printReceiptBluetooth(activePrinter, testPayload);
@@ -785,7 +798,7 @@ const Settings = () => {
                                                                 <span className="fs-5">🖨️</span>
                                                                 <div>
                                                                     <div className="fw-bold small">{device.name || 'Unknown Device'}</div>
-                                                                    <div className="text-secondary" style={{ fontSize: '0.6rem' }}>UUID: {device.id.slice(0, 12)}...</div>
+                                                                    <div className="text-secondary" style={{ fontSize: '0.6rem' }}>Hardware ID: {device.id.slice(0, 17)}...</div>
                                                                 </div>
                                                             </div>
                                                             <button 

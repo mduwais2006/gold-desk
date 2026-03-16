@@ -75,8 +75,8 @@ export const printReceiptBluetooth = async (device, data) => {
         addText("\n");
 
         addCommand(left);
-        addText(`Cust : ${data.customerName}\n`);
-        addText(`Mob  : ${data.mobile}\n`);
+        addText(`Cust : ${data.customerName || 'N/A'}\n`);
+        addText(`Mob  : ${data.mobile || 'N/A'}\n`);
         addText(`Date : ${new Date().toLocaleString()}\n`);
         addText("-".repeat(32) + "\n");
 
@@ -99,20 +99,20 @@ export const printReceiptBluetooth = async (device, data) => {
         });
 
         addText("-".repeat(32) + "\n");
-        addText(`Sub Total:       ₹${data.subTotal.toFixed(2)}\n`);
-        if (data.gst > 0) {
-            const gstLabel = `Tax (GST ${data.gstPercentage}%):`.padEnd(16);
-            addText(`${gstLabel} +₹${data.gst.toFixed(2)}\n`);
+        addText(`Sub Total:       ₹${(data.subTotal || 0).toFixed(2)}\n`);
+        if ((data.gst || 0) > 0) {
+            const gstLabel = `Tax (GST ${data.gstPercentage || 0}%):`.padEnd(16);
+            addText(`${gstLabel} +₹${(data.gst || 0).toFixed(2)}\n`);
         }
-        if (data.discount > 0) addText(`Discount:        -₹${Math.abs(data.discount).toFixed(2)}\n`);
+        if ((data.discount || 0) > 0) addText(`Discount:        -₹${Math.abs(data.discount || 0).toFixed(2)}\n`);
 
         addCommand(boldOn);
-        addText(`TOTAL:           ₹${data.finalTotal.toFixed(2)}\n`);
+        addText(`TOTAL:           ₹${(data.finalTotal || 0).toFixed(2)}\n`);
         addCommand(boldOff);
         addText("-".repeat(32) + "\n");
 
         addCommand(center);
-        addText(`Mode: ${data.paymentMode.toUpperCase()}\n`);
+        addText(`Mode: ${(data.paymentMode || 'N/A').toUpperCase()}\n`);
         addText("Keep this receipt for returns.\n");
         addText("Visit Again!\n");
 
