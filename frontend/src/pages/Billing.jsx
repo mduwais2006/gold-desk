@@ -434,10 +434,10 @@ const Billing = () => {
                                 </div>
 
                                 <div className="cart-header row g-2 mb-2 d-none d-md-flex text-secondary small fw-bold text-uppercase">
-                                    <div className="col-md-4">Item Name / Description</div>
+                                    <div className="col-md-3">Item Name / Description</div>
                                     <div className="col-md-2">Weight (g)</div>
                                     <div className="col-md-2">Rate/g (₹)</div>
-                                    <div className="col-md-1 text-center">GST%</div>
+                                    <div className="col-md-2 text-center">GST%</div>
                                     <div className="col-md-1 text-end">Tax</div>
                                     <div className="col-md-2 text-end">Price</div>
                                 </div>
@@ -448,7 +448,7 @@ const Billing = () => {
                                             key={field.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                                             className="row g-2 align-items-center mb-3 pb-3 border-bottom border-light position-relative"
                                         >
-                                            <div className="col-md-4">
+                                            <div className="col-md-3">
                                                 <input type="text" placeholder="e.g. Gold Chain" className="form-control form-control-glass bg-light" {...register(`items.${index}.itemName`, { required: true })} />
                                             </div>
                                             <div className="col-md-2">
@@ -457,15 +457,16 @@ const Billing = () => {
                                             <div className="col-md-2">
                                                 <input type="number" step="0.01" placeholder="0" className="form-control form-control-glass bg-light" {...register(`items.${index}.ratePerGram`)} />
                                             </div>
-                                            <div className="col-md-1">
-                                                <div className="input-group input-group-sm">
+                                            <div className="col-md-2 px-md-3">
+                                                <div className="d-flex align-items-center gap-2">
                                                     <input 
                                                         type="number" 
                                                         placeholder="GST%"
-                                                        className="form-control form-control-glass bg-light text-center p-1 fw-bold text-primary" 
+                                                        className="form-control form-control-glass bg-light text-center p-2 fw-bold text-primary" 
+                                                        style={{ borderRadius: '12px', minWidth: '60px' }}
                                                         {...register(`items.${index}.gst`)}
                                                     />
-                                                    <span className="input-group-text border-0 small p-1 bg-transparent text-primary fw-bold">%</span>
+                                                    <span className="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold d-none d-md-block" style={{ padding: '8px 10px', borderRadius: '10px' }}>%</span>
                                                 </div>
                                             </div>
                                             <div className="col-md-1 text-end">
