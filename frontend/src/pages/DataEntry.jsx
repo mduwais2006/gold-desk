@@ -109,7 +109,7 @@ const DataEntry = () => {
             
             // Auto-suggest next bill number
             if (user?.shopName) {
-                const shopInitial = user.shopName.charAt(0).toLowerCase();
+                const shopInitial = user.shopName.charAt(0).toUpperCase();
                 const yearYY = new Date().getFullYear().toString().slice(-2);
                 const nextCount = res.data.length + 1;
                 setFormData(prev => ({ ...prev, billNumber: `${shopInitial}${yearYY}${String(nextCount).padStart(2, '0')}` }));
@@ -180,7 +180,7 @@ const DataEntry = () => {
             // localStorage.removeItem('billingFormDraft'); 
             
             setFormData(prev => {
-                const shopInitial = user?.shopName?.charAt(0).toLowerCase() || 'g';
+                const shopInitial = user?.shopName?.charAt(0).toUpperCase() || 'G';
                 const yearYY = new Date().getFullYear().toString().slice(-2);
                 const nextCount = reports.length + 2; // +1 for the one we just added, +1 for next
                 return {
@@ -724,11 +724,15 @@ const DataEntry = () => {
                                         </div>
                                     </div>
 
-                                    {/* Search + Export Row */}
                                     <div className="d-flex flex-wrap align-items-center gap-3">
                                         <div className="flex-grow-1">
                                             <div className="position-relative search-advanced-container">
-                                                <i className="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary" style={{ zIndex: 5 }}></i>
+                                                <div className="position-absolute top-50 start-0 translate-middle-y ms-3 d-flex align-items-center justify-content-center" style={{ zIndex: 5, width: '40px', height: '40px' }}>
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary opacity-75">
+                                                        <circle cx="11" cy="11" r="8"></circle>
+                                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                                    </svg>
+                                                </div>
                                                 <input 
                                                     type="text" 
                                                     className="form-control form-control-advanced ps-5" 
@@ -736,12 +740,14 @@ const DataEntry = () => {
                                                     value={filters.searchQuery}
                                                     onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
                                                     style={{ 
-                                                        height: '48px', 
-                                                        borderRadius: '12px', 
+                                                        height: '52px', 
+                                                        borderRadius: '16px', 
                                                         background: 'var(--bg-input)',
                                                         border: '2px solid var(--border-color)',
-                                                        fontSize: '0.95rem',
-                                                        transition: 'all 0.3s ease'
+                                                        fontSize: '1rem',
+                                                        paddingLeft: '55px !important',
+                                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
                                                     }}
                                                 />
                                             </div>

@@ -57,7 +57,7 @@ const createDataEntry = async (req, res) => {
         // Generate sequential bill number for the user
         const userDoc = await db.collection('users').doc(userId).get();
         const userData = userDoc.data();
-        const shopInitial = (userData?.shopName || 'g').charAt(0).toLowerCase();
+        const shopInitial = (userData?.shopName || 'G').charAt(0).toUpperCase();
         const yearYY = new Date().getFullYear().toString().slice(-2);
 
         const entrySnapshot = await db.collection('users').doc(userId).collection('dataEntries').get();
