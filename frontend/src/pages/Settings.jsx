@@ -86,6 +86,7 @@ const Settings = () => {
     const [isChangingRecovery, setIsChangingRecovery] = useState(false);
 
     const [activeTab, setActiveTab] = useState('branding'); // 'branding', 'billing', 'security', 'system'
+    const [printFormat, setPrintFormat] = useState(localStorage.getItem('printFormat') || 'a4');
 
     useEffect(() => {
         if (activeTab === 'system') {
@@ -375,11 +376,11 @@ const Settings = () => {
             window.dispatchEvent(new Event('printerStateChanged'));
             toast.success(`Success! Secure connection established with ${finalName} 🖨️`);
         } catch (err) {
-            console.error(err);
+            console.warn('Bluetooth handshake error (optional feature):', err);
             if (err.name === 'NetworkError') {
-                toast.error('Handshake Failed! Ensure the POS machine is turned ON and in range.');
-            } else {
-                toast.error('Failed to securely connect to printer API.');
+                toast.warn('Bluetooth connection attempt failed. You can still print using the browser print dialog.');
+            } else if (err.name !== 'NotFoundError') {
+                toast.warn('Could not connect to Bluetooth printer. Browser printing still works normally.');
             }
         } finally {
             setIsScanning(false);
@@ -856,29 +857,29 @@ const Settings = () => {
                                                     <div className="d-flex gap-2">
                                                         <button
                                                             type="button"
-                                                            className={`btn btn-sm flex-grow-1 fw-bold ${localStorage.getItem('printFormat') !== 'thermal' ? 'btn-gold' : 'btn-outline-secondary'}`}
+                                                            className={`btn btn-sm flex-grow-1 fw-bold ${printFormat !== 'thermal' ? 'btn-gold' : 'btn-outline-secondary'}`}
                                                             onClick={() => {
                                                                 localStorage.setItem('printFormat', 'a4');
+                                                                setPrintFormat('a4');
                                                                 toast.success('Print format: A4 Invoice');
-                                                                window.location.reload();
                                                             }}
                                                         >
                                                             📄 A4 Invoice
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            className={`btn btn-sm flex-grow-1 fw-bold ${localStorage.getItem('printFormat') === 'thermal' ? 'btn-gold' : 'btn-outline-secondary'}`}
+                                                            className={`btn btn-sm flex-grow-1 fw-bold ${printFormat === 'thermal' ? 'btn-gold' : 'btn-outline-secondary'}`}
                                                             onClick={() => {
                                                                 localStorage.setItem('printFormat', 'thermal');
+                                                                setPrintFormat('thermal');
                                                                 toast.success('Print format: Thermal (80mm)');
-                                                                window.location.reload();
                                                             }}
                                                         >
                                                             🧾 Thermal (80mm)
                                                         </button>
                                                     </div>
                                                     <p className="small text-secondary mt-1 mb-0">
-                                                        {localStorage.getItem('printFormat') === 'thermal'
+                                                        {printFormat === 'thermal'
                                                             ? '✅ Thermal mode: Narrow receipt format for 80mm rolls'
                                                             : '✅ A4 mode: Full professional invoice layout'
                                                         }
