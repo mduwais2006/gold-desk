@@ -40,12 +40,12 @@ export const PrinterProvider = ({ children }) => {
                             setupDeviceListeners(device);
                             setConnectedDevice(device);
                             setIsPrinterActive(true);
-                        } catch (connErr) {
-                            console.warn("Background GATT connect failed, but device is still paired.");
+                        } catch {
+                            // BT device paired but not in range — silently skip
                         }
                     }
-                } catch (error) {
-                    console.error("Auto-reconnect scan failed:", error);
+                } catch {
+                    // Silently ignore — BT is optional
                 } finally {
                     setIsReconnecting(false);
                 }
@@ -86,8 +86,8 @@ export const PrinterProvider = ({ children }) => {
                     setIsPrinterActive(true);
                     return device;
                 }
-            } catch (error) {
-                console.error("Wake up failed:", error);
+            } catch {
+                // BT wake-up failed silently — browser print still works
             } finally {
                 setIsReconnecting(false);
             }

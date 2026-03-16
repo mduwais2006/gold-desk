@@ -376,12 +376,11 @@ const Settings = () => {
             window.dispatchEvent(new Event('printerStateChanged'));
             toast.success(`Success! Secure connection established with ${finalName} 🖨️`);
         } catch (err) {
-            console.warn('Bluetooth handshake error (optional feature):', err);
+            // Only show a toast for NetworkError (device in range but rejected)
             if (err.name === 'NetworkError') {
-                toast.warn('Bluetooth connection attempt failed. You can still print using the browser print dialog.');
-            } else if (err.name !== 'NotFoundError') {
-                toast.warn('Could not connect to Bluetooth printer. Browser printing still works normally.');
+                toast.warn('Bluetooth pairing failed. Browser printing still works normally.');
             }
+            // NotFoundError = user cancelled, nothing to show
         } finally {
             setIsScanning(false);
             setPendingDevice(null);
