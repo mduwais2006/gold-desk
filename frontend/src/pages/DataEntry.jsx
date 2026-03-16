@@ -282,7 +282,10 @@ const DataEntry = () => {
     const handleExportPdfLocal = () => {
         if (filteredReports.length === 0) return toast.warning('No data to export for this period.');
         try {
-            generateReportsPdf(getExportData(), getExportFilename());
+            generateReportsPdf(getExportData(), getExportFilename(), {
+                name: user?.shopName,
+                address: user?.shopAddress
+            });
             toast.success('Professional PDF Generated on Device! 📑');
         } catch (error) {
             console.error(error);
@@ -312,7 +315,7 @@ const DataEntry = () => {
                 }],
                 shopDetails: {
                     name: user?.shopName,
-                    address: "Past Record Print - " + new Date(entry.date).toLocaleDateString()
+                    address: user?.shopAddress
                 }
             };
 

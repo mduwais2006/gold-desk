@@ -179,7 +179,7 @@ export const exportToExcel = (data, fileName = 'Jewelry_Report') => {
  * @param {Array} data Array of Objects (inventory or sales)
  * @param {String} fileName Name of the output file
  */
-export const generateReportsPdf = (data, fileName = 'Jewelry_Report') => {
+export const generateReportsPdf = (data, fileName = 'Jewelry_Report', shopDetails = {}) => {
     // Dynamically retrieve headers from first object
     if (!data.length) return;
 
@@ -189,10 +189,19 @@ export const generateReportsPdf = (data, fileName = 'Jewelry_Report') => {
     doc.setFillColor(30, 41, 59); // Dark slate
     doc.rect(0, 0, 300, 25, 'F');
 
-    doc.setFontSize(16);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(251, 191, 36); // Gold #fbbf24
-    doc.text('GOLD DESK - MONTHLY SALES REPORT', 14, 16);
+    doc.text((shopDetails.name || 'GOLD DESK').toUpperCase(), 14, 13);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(200, 200, 200);
+    if (shopDetails.address) {
+        doc.text(shopDetails.address.split('\n')[0], 14, 19);
+    } else {
+        doc.text('SALES AND ANALYTICS REPORT', 14, 19);
+    }
 
     const tableColumn = Object.keys(data[0]);
     const tableRows = data.map(obj => Object.values(obj));

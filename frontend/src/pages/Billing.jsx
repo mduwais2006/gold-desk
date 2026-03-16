@@ -477,6 +477,16 @@ const Billing = () => {
                                 📊 Summary & Payment
                             </h5>
 
+                            {user?.shopAddress && (
+                                <div className="alert alert-light border-0 small py-2 mb-3 d-flex align-items-start gap-2 shadow-sm" style={{ background: 'rgba(212, 175, 55, 0.03)' }}>
+                                    <span style={{ fontSize: '1.2rem' }}>📍</span>
+                                    <div>
+                                        <div className="fw-bold text-uppercase opacity-50" style={{ fontSize: '0.6rem', letterSpacing: '1px' }}>Billing From</div>
+                                        <div className="text-secondary" style={{ fontSize: '0.75rem', lineHeight: '1.2' }}>{user.shopAddress}</div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="bg-light p-3 border rounded-4 mb-4">
                                 <div className="d-flex justify-content-between mb-3 align-items-center">
                                     <span className="text-secondary fw-semibold">Subtotal</span>

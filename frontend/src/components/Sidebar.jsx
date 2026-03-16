@@ -76,6 +76,7 @@ const Sidebar = () => {
             <div className="mobile-header d-lg-none">
                 <div className="d-flex align-items-center">
                     <div className="fw-bold text-accent-primary small tracking-widest text-uppercase">{user?.shopName || 'GOLD DATA ENTRY'}</div>
+                    {user?.shopAddress && <div className="ms-2 small text-secondary d-none d-sm-block opacity-75" style={{ fontSize: '0.6rem' }}>| {user.shopAddress.split('\n')[0]}</div>}
                 </div>
                 <button 
                     className="ellipsis-menu border-0 bg-transparent p-2"
@@ -109,14 +110,16 @@ const Sidebar = () => {
                         <div className="brand-box mb-4">
                             <h3 className="fw-900 mb-0" style={{ 
                                 color: 'var(--accent-primary)', 
-                                fontSize: '1.4rem', /* Slightly larger font */
-                                letterSpacing: '3px', /* Increased letter spacing */
+                                fontSize: '1.4rem', 
+                                letterSpacing: '3px', 
                                 textTransform: 'uppercase',
-                                padding: '1rem 0' /* Add some vertical padding */
+                                padding: '1rem 0 0.5rem 0'
                             }}>
                                 {user?.shopName || 'GOLD DATA ENTRY'}
                             </h3>
-                            <div className="small opacity-50 fw-bold mt-1" style={{ letterSpacing: '1px', fontSize: '0.65rem' }}>PREMIUM JEWELRY DESK</div>
+                            <div className="small opacity-75 fw-bold mt-1" style={{ letterSpacing: '0.5px', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                                {user?.shopAddress || "PREMIUM JEWELRY DESK"}
+                            </div>
                         </div>
                     </div>
 
