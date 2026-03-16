@@ -96,10 +96,8 @@ const DataEntry = () => {
 
 
     useEffect(() => {
-        if (activeTab === 'reports') {
-            fetchReports();
-        }
-    }, [activeTab]);
+        fetchReports();
+    }, []);
 
     const fetchReports = async () => {
         try {
@@ -146,6 +144,7 @@ const DataEntry = () => {
 
             const payload = {
                 ...formData,
+                billNumber: formData.billNumber,
                 itemName: finalItemName,
                 totalAmount: Number(totalMoney),
                 gstPercentage: Number(formData.gstPercentage) || 0,
