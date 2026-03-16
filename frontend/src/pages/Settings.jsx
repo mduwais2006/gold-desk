@@ -57,6 +57,23 @@ const Settings = () => {
     };
     const [isScanning, setIsScanning] = useState(false);
     const [pendingDevice, setPendingDevice] = useState(null);
+    const [recentDevices, setRecentDevices] = useState([]);
+
+    const fetchRecentDevices = async () => {
+        if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return;
+        try {
+            const devices = await navigator.bluetooth.getDevices();
+            setRecentDevices(devices);
+        } catch (err) {
+            console.error("Error fetching authorized devices:", err);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'system') {
+            fetchRecentDevices();
+        }
+    }, [activeTab]);
 
     // Recovery Email State
     const [recoveryEmail, setRecoveryEmail] = useState(user?.recoveryEmail || '');
@@ -377,8 +394,20 @@ const Settings = () => {
             if (!navigator.bluetooth) {
                 return toast.error('Web Bluetooth API is not supported in this browser. Please use Chrome/Edge on Desktop or Android.');
             }
+
+            toast.info('Opening Bluetooth Picker... Please wait for device names to resolve.', { autoClose: 3000 });
+            
             const device = await navigator.bluetooth.requestDevice({
-                acceptAllDevices: true,
+                filters: [
+                    { namePrefix: 'BT' },
+                    { namePrefix: 'POS' },
+                    { namePrefix: 'RPP' },
+                    { namePrefix: 'MTP' },
+                    { namePrefix: 'Thermal' },
+                    { namePrefix: 'Inner' },
+                    { services: ['000018f0-0000-1000-8000-00805f9b34fb'] },
+                    { services: ['0000ffe0-0000-1000-8000-00805f9b34fb'] }
+                ],
                 optionalServices: [
                     '000018f0-0000-1000-8000-00805f9b34fb', 
                     '0000fee7-0000-1000-8000-00805f9b34fb',
@@ -408,11 +437,17 @@ const Settings = () => {
                     const safeKeywords = ['pos', 'printer', 'thermal', 'tm-', 'rp-', 'mtp', 'tvs', 'hoin', 'blue', 'bt'];
                     const isLikelySafe = safeKeywords.some(kw => finalName.toLowerCase().includes(kw));
 
-                    if (!isLikelySafe) {
+                    // Refined security check: If not likely safe AND not an unknown device, prompt user.
+                    // Otherwise, proceed with connection.
+                    if (!isLikelySafe && finalName !== 'Unknown Bluetooth Device') {
                         setPendingDevice(device);
                         setIsScanning(false);
                     } else {
-                        toast.success('✅ Security Scan Passed. Device is safe.');
+                        if (finalName === 'Unknown Bluetooth Device') {
+                            toast.warn('⚠️ Device name could not be resolved, but proceeding with connection...');
+                        } else {
+                            toast.success('✅ Security Scan Passed. Device is safe.');
+                        }
                         connectDeviceFinal(device);
                     }
                 }, 2000);
@@ -739,6 +774,33 @@ const Settings = () => {
                                                 <button type="button" className="btn btn-sm btn-outline-secondary flex-grow-1 shadow-sm" onClick={handleTestPrint}>Test Print</button>
                                             </div>
                                         </div>
+
+                                        {/* Recently Paired List */}
+                                        {recentDevices.length > 0 && (
+                                            <div className="p-3 border rounded mb-3 bg-white">
+                                                <h6 className="fw-bold mb-3 small text-secondary">Authorized Printer Cache</h6>
+                                                <div className="d-flex flex-column gap-2">
+                                                    {recentDevices.map(device => (
+                                                        <div key={device.id} className="d-flex justify-content-between align-items-center p-2 rounded bg-light border-0">
+                                                            <div className="d-flex align-items-center gap-2">
+                                                                <span className="fs-5">🖨️</span>
+                                                                <div>
+                                                                    <div className="fw-bold small">{device.name || 'Unknown Device'}</div>
+                                                                    <div className="text-secondary" style={{ fontSize: '0.6rem' }}>UUID: {device.id.slice(0, 12)}...</div>
+                                                                </div>
+                                                            </div>
+                                                            <button 
+                                                                className="btn btn-sm btn-outline-dark fw-bold px-3 py-1"
+                                                                onClick={() => connectDeviceFinal(device)}
+                                                                style={{ fontSize: '0.7rem' }}
+                                                            >
+                                                                Instant Link
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
 
                                         <div className="p-3 border rounded">
                                             <h6 className="fw-bold mb-3">System Settings</h6>
