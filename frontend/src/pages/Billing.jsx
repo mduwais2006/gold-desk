@@ -380,7 +380,7 @@ const Billing = () => {
                 </motion.div>
 
                 <div className="row g-4 mb-4">
-                    <div className="col-xl-8 col-lg-7">
+                    <div className="col-xl-9 col-lg-8">
                         <form id="billingForm" onSubmit={handleSubmit(onSubmit)}>
                             {/* Customer Details */}
                             <motion.div
@@ -435,11 +435,11 @@ const Billing = () => {
 
                                 <div className="cart-header row g-2 mb-2 d-none d-md-flex text-secondary small fw-bold text-uppercase">
                                     <div className="col-md-3">Item Name / Description</div>
-                                    <div className="col-md-2">Weight (g)</div>
+                                    <div className="col-md-1">Weight</div>
                                     <div className="col-md-2">Rate/g (₹)</div>
                                     <div className="col-md-2 text-center">GST%</div>
                                     <div className="col-md-1 text-end">Tax</div>
-                                    <div className="col-md-2 text-end">Price</div>
+                                    <div className="col-md-3 text-end">Price (Total)</div>
                                 </div>
 
                                 <AnimatePresence>
@@ -451,8 +451,8 @@ const Billing = () => {
                                             <div className="col-md-3">
                                                 <input type="text" placeholder="e.g. Gold Chain" className="form-control form-control-glass bg-light" {...register(`items.${index}.itemName`, { required: true })} />
                                             </div>
-                                            <div className="col-md-2">
-                                                <input type="number" step="0.001" placeholder="0.00" className="form-control form-control-glass bg-light" {...register(`items.${index}.weight`)} />
+                                            <div className="col-md-1">
+                                                <input type="number" step="0.001" placeholder="0.00" className="form-control form-control-glass bg-light px-1 text-center" {...register(`items.${index}.weight`)} />
                                             </div>
                                             <div className="col-md-2">
                                                 <input type="number" step="0.01" placeholder="0" className="form-control form-control-glass bg-light" {...register(`items.${index}.ratePerGram`)} />
@@ -463,19 +463,19 @@ const Billing = () => {
                                                         type="number" 
                                                         placeholder="GST%"
                                                         className="form-control form-control-glass bg-light text-center p-2 fw-bold text-primary" 
-                                                        style={{ borderRadius: '12px', minWidth: '60px' }}
+                                                        style={{ borderRadius: '12px', minWidth: '55px' }}
                                                         {...register(`items.${index}.gst`)}
                                                     />
-                                                    <span className="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold d-none d-md-block" style={{ padding: '8px 10px', borderRadius: '10px' }}>%</span>
+                                                    <span className="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold d-none d-md-block" style={{ padding: '8px 8px', borderRadius: '10px', fontSize: '0.7rem' }}>%</span>
                                                 </div>
                                             </div>
                                             <div className="col-md-1 text-end">
                                                 <span className="small text-secondary fw-bold">₹{((parseFloat(watchItems[index]?.price) || 0) - ((parseFloat(watchItems[index]?.price) || 0) / (1 + (parseFloat(watchItems[index]?.gst) || 0) / 100))).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
                                             </div>
-                                            <div className="col-md-2 d-flex align-items-center justify-content-end gap-2">
+                                            <div className="col-md-3 d-flex align-items-center justify-content-end gap-2">
                                                 <div className="input-group input-group-sm w-100">
-                                                    <span className="input-group-text border-0 fw-bold text-secondary">₹</span>
-                                                    <input type="number" step="0.01" className="form-control form-control-glass fw-bold text-success" placeholder="0.00" {...register(`items.${index}.price`)} />
+                                                    <span className="input-group-text border-0 fw-bold text-secondary bg-transparent">₹</span>
+                                                    <input type="number" step="0.01" className="form-control form-control-glass fw-bold text-success py-2" style={{ fontSize: '1rem' }} placeholder="0.00" {...register(`items.${index}.price`)} />
                                                 </div>
                                                 <button type="button" className="btn btn-link text-danger p-0 ms-1" onClick={() => remove(index)}>✖</button>
                                             </div>
