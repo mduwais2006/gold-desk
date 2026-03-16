@@ -322,21 +322,29 @@ const Billing = () => {
             } else {
                 toast.success(`Bill ${res.data.billNumber} Saved Successfully! 📑`);
             }
-
+            // Comprehensive Cleanup and Reset
             localStorage.removeItem('billingFormDraft');
             localStorage.removeItem('pendingBillingItems');
             localStorage.removeItem('pendingCustomerDetails');
 
+            // Explicitly clear form via reset
             reset({
-                customerName: '', 
-                mobile: '', 
+                customerName: '',
+                mobile: '',
                 billNumber: '',
-                discount: '', 
+                discount: '',
                 gst: user?.gstPercentage || 3,
                 items: []
-            }); 
-            setSubmittedItems([]); // Reset summary UI
+            });
+
+            // Clear summary UI state
+            setSubmittedItems([]); 
+            
+            // Clean UI focus
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
         } catch (error) {
+            console.error("Billing submission error:", error);
             toast.error(error.response?.data?.message || 'Failed to generate bill');
         } finally {
             setIsSaving(false);
