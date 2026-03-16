@@ -500,7 +500,7 @@ const Billing = () => {
                         </form>
                     </div>
 
-                    <div className="col-xl-4 col-lg-5">
+                    <div className="col-xl-3 col-lg-4">
                         <motion.div
                             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.2 }}
                             className="glass-panel p-4 border-0 position-sticky shadow-lg"
