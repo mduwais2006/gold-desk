@@ -754,7 +754,8 @@ const DataEntry = () => {
                                                         border: '2px solid var(--border-color)',
                                                         fontSize: '1.05rem',
                                                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                                        transform: 'translateZ(0)' // Hardware acceleration
                                                     }}
                                                 />
                                             </div>

@@ -32,10 +32,15 @@
     <title>Gold Desk Premium | Expert Jewelry Shop Management</title>
 
     <!-- Performance Optimization: DNS Prefetch & Preconnect -->
-    <link rel="dns-prefetch" href="http://localhost:5000">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="http://localhost:5000">
+    
+    <!-- Preload Critical Assets -->
+    <link rel="preload" href="/src/main.jsx" as="script">
+    <link rel="preload" href="/src/styles/index.css" as="style">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         const theme = localStorage.getItem('theme') || 'light';
