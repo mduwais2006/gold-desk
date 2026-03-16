@@ -279,6 +279,47 @@ body {
   font-weight: 800 !important;
 }
 
+/* --- Password Visibility Toggles --- */
+.password-field-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.password-toggle-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: var(--text-secondary);
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  user-select: none;
+  font-size: 1.1rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 50%;
+}
+
+.password-toggle-icon:hover {
+  opacity: 1;
+  color: var(--accent-primary);
+  background: var(--accent-soft);
+}
+
+.password-toggle-icon svg {
+  display: block;
+}
+
+.form-control-glass.with-toggle {
+  padding-right: 48px !important;
+}
+
 /* --- Buttons --- */
 .btn-security {
   background: rgba(212, 175, 55, 0.1);

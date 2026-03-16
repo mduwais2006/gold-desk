@@ -962,13 +962,38 @@ const Settings = () => {
                                                         title={showPassword ? 'Hide Password' : 'Show Password'}
                                                     >
                                                         {showPassword ? (
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                                                         ) : (
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                                         )}
                                                     </span>
                                                 </div>
                                             </div>
+
+                                            <div>
+                                                <label className="form-label small fw-semibold">Confirm New Password</label>
+                                                <div className="password-field-container">
+                                                    <input 
+                                                        type={showConfirmPassword ? 'text' : 'password'} 
+                                                        placeholder="Repeat your new password" 
+                                                        className="form-control form-control-glass with-toggle" 
+                                                        value={credentialData.confirmPassword} 
+                                                        onChange={e => setCredentialData({ ...credentialData, confirmPassword: e.target.value })} 
+                                                    />
+                                                    <span 
+                                                        className="password-toggle-icon" 
+                                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                        title={showConfirmPassword ? 'Hide Password' : 'Show Password'}
+                                                    >
+                                                        {showConfirmPassword ? (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                                                        ) : (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </div>
+
                                             <div>
                                                 <label className="form-label small fw-semibold">6-Digit Security OTP</label>
                                                 <input type="text" maxLength="6" className="form-control form-control-glass text-center tracking-widest fw-bold" placeholder="------" style={{ letterSpacing: '0.5em' }} value={credentialData.otp} onChange={e => setCredentialData({ ...credentialData, otp: e.target.value })} />
