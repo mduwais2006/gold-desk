@@ -69,11 +69,6 @@ const Settings = () => {
         }
     };
 
-    useEffect(() => {
-        if (activeTab === 'system') {
-            fetchRecentDevices();
-        }
-    }, [activeTab]);
 
     // Recovery Email State
     const [recoveryEmail, setRecoveryEmail] = useState(user?.recoveryEmail || '');
@@ -83,6 +78,12 @@ const Settings = () => {
     const [isChangingRecovery, setIsChangingRecovery] = useState(false);
 
     const [activeTab, setActiveTab] = useState('branding'); // 'branding', 'billing', 'security', 'system'
+
+    useEffect(() => {
+        if (activeTab === 'system') {
+            fetchRecentDevices();
+        }
+    }, [activeTab]);
 
     // Sync profile data when user changes
     useEffect(() => {
