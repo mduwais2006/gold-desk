@@ -726,16 +726,24 @@ const DataEntry = () => {
 
                                     <div className="d-flex flex-wrap align-items-center gap-3">
                                         <div className="flex-grow-1">
-                                            <div className="position-relative search-advanced-container">
-                                                <div className="position-absolute top-50 start-0 translate-middle-y ms-3 d-flex align-items-center justify-content-center" style={{ zIndex: 5, width: '40px', height: '40px' }}>
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary opacity-75">
+                                            <div className="d-flex align-items-center gap-3 search-premium-wrapper">
+                                                <div className="search-icon-badge d-flex align-items-center justify-content-center flex-shrink-0" style={{ 
+                                                    width: '52px', 
+                                                    height: '52px', 
+                                                    borderRadius: '16px', 
+                                                    background: 'var(--bg-secondary)',
+                                                    border: '2px solid var(--border-color)',
+                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                                    transition: 'all 0.3s ease'
+                                                }}>
+                                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary opacity-75">
                                                         <circle cx="11" cy="11" r="8"></circle>
                                                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                                                     </svg>
                                                 </div>
                                                 <input 
                                                     type="text" 
-                                                    className="form-control form-control-advanced ps-5" 
+                                                    className="form-control form-control-advanced flex-grow-1" 
                                                     placeholder="Search by Name, Mobile or Bill #..." 
                                                     value={filters.searchQuery}
                                                     onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
@@ -744,8 +752,7 @@ const DataEntry = () => {
                                                         borderRadius: '16px', 
                                                         background: 'var(--bg-input)',
                                                         border: '2px solid var(--border-color)',
-                                                        fontSize: '1rem',
-                                                        paddingLeft: '55px !important',
+                                                        fontSize: '1.05rem',
                                                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                                         boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
                                                     }}
