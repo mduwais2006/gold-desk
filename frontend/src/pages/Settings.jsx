@@ -349,6 +349,9 @@ const Settings = () => {
             setIsScanning(true);
             await deviceToConnect.gatt.connect();
             
+            // Stabilization delay: wait for GATT server to ready services
+            await new Promise(r => setTimeout(r, 500));
+            
             // Try to resolve hidden device name via GATT
             let resolvedName = deviceToConnect.name;
             if (!resolvedName || resolvedName === 'Unknown Device') {
@@ -404,9 +407,9 @@ const Settings = () => {
             };
             await printReceiptBluetooth(activePrinter, testPayload);
             toast.success('Test print successful! 🖨️');
-        } catch (error) {
-            console.error(error);
-            toast.error(error.message || 'Test print failed. Check connection.');
+        } catch (err) {
+            console.error(err);
+            toast.error(err.message || 'Test print failed. Check connection.');
         }
     };
 

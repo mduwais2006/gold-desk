@@ -1,4 +1,6 @@
 // utility to physically send ESC/POS byte commands to a connected Web Bluetooth Printer
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const printReceiptBluetooth = async (device, data) => {
     if (!device || !device.gatt) {
         throw new Error("No active Bluetooth device found. Please pair printer in Settings.");
@@ -7,18 +9,34 @@ export const printReceiptBluetooth = async (device, data) => {
     if (!device.gatt.connected) {
         try {
             await device.gatt.connect();
+            // Stabilization delay: wait for GATT server to ready services
+            await sleep(500);
         } catch (error) {
             throw new Error("Failed to reconnect to Bluetooth printer. Please ensure it is powered on and in range.");
         }
+    } else {
+        // Even if already connected, a small pause ensures previous operations have cleared
+        await sleep(100);
     }
 
     try {
-        // Find typical printer service
+        // Find typical printer service - with retry logic for "GATT Unknown Error"
         let services;
-        try {
-            services = await device.gatt.getPrimaryServices();
-        } catch (serviceErr) {
-            throw new Error("Hardware integration updated. Please go to Settings > System Hub, click 'Disconnect Machine', and 'Scan Bluetooth' again to re-pair the printer. (If multiple show up, select the one with BLE or LE in the name).");
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        while (attempts < maxAttempts) {
+            try {
+                services = await device.gatt.getPrimaryServices();
+                break; // Success
+            } catch (err) {
+                attempts++;
+                if (attempts >= maxAttempts) {
+                    throw new Error("Hardware integration updated. Please go to Settings > System Hub, click 'Disconnect Machine', and 'Scan Bluetooth' again to re-pair the printer. (If multiple show up, select the one with BLE or LE in the name).");
+                }
+                console.warn(`GATT Service Discovery failed (Attempt ${attempts}/${maxAttempts}). Retrying in 500ms...`);
+                await sleep(500);
+            }
         }
         
         let targetCharacteristic = null;
@@ -146,6 +164,7 @@ export const resolveDeviceName = async (device) => {
     if (!device || !device.gatt || !device.gatt.connected) return null;
     
     try {
+        await sleep(200); // Brief pause before GATT read
         // Generic Access Service (standard UUID 0x1800)
         const service = await device.gatt.getPrimaryService(0x1800);
         // Device Name Characteristic (standard UUID 0x2A00)
