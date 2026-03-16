@@ -130,11 +130,7 @@ const Billing = () => {
         return { calculatedItems: items, subTotal: sTotal, gstAmount: gTotal, finalTotal: fTotal };
     }, [submittedItems, watchDiscount]);
 
-    // Force an initial sync on mount for any saved drafts
-    useEffect(() => {
-        setTimeout(() => handleCalculateTotals(), 500);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+
 
 
     // Live Auto-Save to prevent data loss when navigating to Calculator
@@ -175,8 +171,6 @@ const Billing = () => {
                     // Strictly append all incoming items to ensure nothing is ever replaced
                     items.forEach(item => append(item));
                     localStorage.removeItem('pendingBillingItems');
-                    // Automatically sync newly fetched items to the summary
-                    setTimeout(() => handleCalculateTotals(), 500);
                 }
             } catch (e) {
                 console.error('Failed to parse pending items', e);
@@ -219,8 +213,6 @@ const Billing = () => {
     useEffect(() => {
         if (user?.gstEnabled && !watchGst && !savedDraft) {
             setValue('gst', user.gstPercentage || 3);
-            // Refresh totals once settings land
-            setTimeout(() => handleCalculateTotals(), 200);
         }
     }, [user, setValue, watchGst, savedDraft]);
 
@@ -328,6 +320,7 @@ const Billing = () => {
                 toast.success(`Bill ${res.data.billNumber} Saved Successfully! 📑`);
             }
             // Comprehensive Cleanup and Reset
+            // Comprehensive Cleanup and Reset
             localStorage.removeItem('billingFormDraft');
             localStorage.removeItem('pendingBillingItems');
             localStorage.removeItem('pendingCustomerDetails');
@@ -335,19 +328,18 @@ const Billing = () => {
             // Force immediate UI reset
             setSubmittedItems([]); 
             setPaymentMode('cash'); 
+            setPrintData(null); // Clear print state
             
             // Explicitly clear form via reset
-            setTimeout(() => {
-                reset({
-                    customerName: '',
-                    mobile: '',
-                    billNumber: '',
-                    discount: '',
-                    gst: user?.gstPercentage || 3,
-                    items: []
-                });
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }, 100);
+            reset({
+                customerName: '',
+                mobile: '',
+                billNumber: '',
+                discount: '',
+                gst: user?.gstPercentage || 3,
+                items: []
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
 
         } catch (error) {
             console.error("Billing submission error:", error);
