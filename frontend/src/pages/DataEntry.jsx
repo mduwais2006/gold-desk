@@ -249,12 +249,17 @@ const DataEntry = () => {
     }, [reports, filters, reportsCutoffDate]);
 
     const handleBulkDelete = async () => {
-        if (!filters.searchMonth || !filters.searchYear) {
-            return toast.warning('Please select a specific Month and Year for bulk deletion.');
+        if (!filters.searchMonth && !filters.searchYear) {
+            return toast.warning('Please select at least Month or Year to delete records');
         }
 
-        const confirmText = `Are you sure you want to delete ALL entries for ${months.find(m => m.val === filters.searchMonth)?.label} ${filters.searchYear}?`;
-        if (!window.confirm(confirmText)) return;
+        const dateDesc = filters.searchMonth && filters.searchYear 
+            ? `for ${new Date(0, filters.searchMonth - 1).toLocaleString('default', { month: 'long' })} ${filters.searchYear}`
+            : filters.searchMonth 
+                ? `for ${new Date(0, filters.searchMonth - 1).toLocaleString('default', { month: 'long' })} (all years)`
+                : `for all months in ${filters.searchYear}`;
+
+        if (!window.confirm(`⚠️ CRITICAL ACTION: Are you sure you want to PERMANENTLY DELETE ALL records ${dateDesc}? This cannot be undone.`)) return;
 
         try {
             setIsLoading(true);
@@ -803,7 +808,7 @@ const DataEntry = () => {
                                             filteredReports.map((entry, idx) => (
                                                 <tr key={entry.id} className="align-middle" style={{ borderBottom: '1px solid var(--border-color)' }}>
                                                     <td className="px-4 text-secondary small">
-                                                        <div className="badge bg-gold-soft text-gold border border-gold-subtle mb-1 fw-bold fs-6" style={{ fontSize: '0.85rem' }}>{entry.billNumber || 'NO-ID'}</div>
+                                                        <div className="badge bg-gold-soft border border-gold-subtle mb-1 fw-bold fs-6" style={{ fontSize: '0.85rem', color: '#000000' }}>{entry.billNumber || 'NO-ID'}</div>
                                                         <div className="text-muted fw-bold">{new Date(entry.date).toLocaleDateString()}</div>
                                                         <div className="text-muted" style={{ fontSize: '0.7rem' }}>{new Date(entry.date).toLocaleTimeString()}</div>
                                                     </td>

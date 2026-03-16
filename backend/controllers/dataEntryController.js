@@ -142,12 +142,11 @@ const bulkDeleteDataEntries = async (req, res) => {
             const entryDate = new Date(data.date);
             let shouldDelete = false;
 
-            if (month && year) {
-                if (entryDate.getMonth() + 1 === Number(month) && entryDate.getFullYear() === Number(year)) {
-                    shouldDelete = true;
-                }
-            } else if (dateRange) {
-                // ... handle date range logic if needed ...
+            const monthMatches = !month || (entryDate.getMonth() + 1 === Number(month));
+            const yearMatches = !year || (entryDate.getFullYear() === Number(year));
+
+            if (monthMatches && yearMatches && (month || year)) {
+                shouldDelete = true;
             }
 
             if (shouldDelete) {
