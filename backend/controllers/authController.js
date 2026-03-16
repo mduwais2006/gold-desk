@@ -86,37 +86,52 @@ const registerUser = async (req, res) => {
         });
 
         // Send Welcome Email
-        if (email) {
-            sendEmail({
-                email: email,
+        if (cleanEmail) {
+            console.log(`✉️ ATTEMPTING WELCOME EMAIL FOR: ${cleanEmail}`);
+            const welcomeResult = await sendEmail({
+                email: cleanEmail,
                 subject: '👑 Welcome to Gold Desk Premium!',
-                message: `Hi ${name}, welcome to Gold Desk! We are excited to have you on board. Your account is ready to manage your jewelry shop analytics and billing.`,
+                message: `Hi ${name}, welcome to Gold Desk! We are excited to have you on board. Your account for ${shopName || 'your shop'} is ready.`,
                 html: `
-                    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eab308; border-radius: 15px; background: #fff;">
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <h1 style="color: #eab308; font-weight: 900; letter-spacing: 2px;">GOLD DESK</h1>
-                            <p style="color: #64748b; letter-spacing: 0.3em; font-size: 0.8rem;">PREMIUM MANAGEMENT</p>
+                    <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 30px auto; padding: 40px; border-radius: 24px; background: #ffffff; box-shadow: 0 20px 50px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+                        <div style="text-align: center; margin-bottom: 35px;">
+                            <div style="display: inline-block; padding: 15px; background: #fffcf0; border-radius: 20px; border: 2px solid #eab308; margin-bottom: 15px;">
+                                <h1 style="color: #eab308; font-weight: 900; margin: 0; font-size: 28px; letter-spacing: -0.02em;">GOLD DESK</h1>
+                            </div>
+                            <p style="color: #94a3b8; letter-spacing: 0.4em; font-size: 10px; text-transform: uppercase;">Premium Management Portal</p>
                         </div>
-                        <h2 style="color: #0f172a;">Welcome, ${name}!</h2>
-                        <p style="color: #334155; line-height: 1.6;">We're thrilled to have you join our premium jewelry shop management platform. Your account for <b>${shopName || 'your shop'}</b> has been successfully created.</p>
-                        <div style="background: #f8fafc; padding: 15px; border-radius: 10px; margin: 20px 0;">
-                            <p style="margin: 0; color: #64748b;"><b>Your Dashboard is ready:</b></p>
-                            <ul style="color: #334155; padding-left: 20px;">
-                                <li>Real-time Sales Analytics</li>
-                                <li>Secure Data Entry & Storage</li>
-                                <li>Premium PDF Billing & Exporting</li>
-                                <li>Global Time & Format Control</li>
-                            </ul>
+                        
+                        <h2 style="color: #0f172a; font-size: 24px; font-weight: 700; margin-bottom: 15px;">Hi ${name}, welcome aboard! 👋</h2>
+                        <p style="color: #475569; line-height: 1.7; font-size: 16px; margin-bottom: 25px;">We're thrilled to have you join the Gold Desk family. Your professional dashboard for <b>${shopName || 'your jewelry shop'}</b> is now active and ready for use.</p>
+                        
+                        <div style="background: #f8fafc; padding: 30px; border-radius: 20px; margin: 30px 0; border: 1px solid #f1f5f9;">
+                            <h4 style="color: #1e293b; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">Your Premium Toolset:</h4>
+                            <div style="display: grid; gap: 12px; color: #475569; font-size: 15px;">
+                                <div style="margin-bottom: 8px;">✨ <b>Real-time Analytics</b> — Live sales tracking</div>
+                                <div style="margin-bottom: 8px;">🔐 <b>Secure Billing</b> — A4 & Thermal thermal receipts</div>
+                                <div style="margin-bottom: 8px;">📊 <b>Inventory Engine</b> — Smart stock management</div>
+                                <div>🚀 <b>Google-Fast Speed</b> — Optimized performance</div>
+                            </div>
                         </div>
-                        <p style="color: #334155;">Ready to get started?</p>
-                        <div style="text-align: center; margin-top: 30px;">
-                            <a href="http://localhost:5173" style="background: #eab308; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Login to your Dashboard</a>
+
+                        <div style="text-align: center; margin: 40px 0;">
+                            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/login" style="background: #eab308; color: #ffffff; padding: 18px 45px; text-decoration: none; border-radius: 16px; font-weight: 700; font-size: 16px; display: inline-block; box-shadow: 0 10px 20px rgba(234, 179, 8, 0.2);">Launch My Dashboard</a>
                         </div>
-                        <hr style="border: none; border-top: 1px solid #f1f5f9; margin-top: 40px;" />
-                        <p style="color: #94a3b8; font-size: 0.8rem; text-align: center;">This is an automated message from your Gold Desk Premium Instance.</p>
+                        
+                        <p style="color: #64748b; font-size: 14px; text-align: center; line-height: 1.6;">If you have any questions, our support team is always here for you.</p>
+                        
+                        <div style="margin-top: 50px; padding-top: 30px; border-top: 1px solid #f1f5f9; text-align: center;">
+                            <p style="color: #94a3b8; font-size: 12px; margin: 0;">&copy; ${new Date().getFullYear()} Gold Desk Premium. All rights reserved.</p>
+                            <p style="color: #cbd5e1; font-size: 11px; margin-top: 5px;">This is an automated priority message.</p>
+                        </div>
                     </div>
                 `
             });
+            if (welcomeResult.success) {
+                console.log(`\x1b[42m\x1b[30m ✉️ WELCOME EMAIL SENT TO ${cleanEmail} \x1b[0m`);
+            } else {
+                console.log(`\x1b[41m\x1b[37m 🛑 WELCOME EMAIL FAILED FOR ${cleanEmail} \x1b[0m`, welcomeResult.error);
+            }
         }
 
         res.status(201).json({
