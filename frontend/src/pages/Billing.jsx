@@ -161,6 +161,31 @@ const Billing = () => {
         toast.info(`Synced ${globalGst}% GST to all items in list.`);
     };
 
+    const handleClearAll = () => {
+        // Atomic Cleanup
+        localStorage.removeItem('billingFormDraft');
+        localStorage.removeItem('pendingBillingItems');
+        localStorage.removeItem('pendingCustomerDetails');
+
+        // State Reset
+        setSubmittedItems([]);
+        setPaymentMode('cash');
+        setPrintData(null);
+
+        // Form Reset
+        reset({
+            customerName: '',
+            mobile: '',
+            billNumber: '',
+            discount: '',
+            gst: user?.gstPercentage || 3,
+            items: []
+        });
+
+        toast.success('Workspace cleared & reset! 🧹');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     // Load pending data entries automatically from calculator
     useEffect(() => {
         const pendingItemsStr = localStorage.getItem('pendingBillingItems');
@@ -394,9 +419,19 @@ const Billing = () => {
             <Sidebar />
             <div className="main-content flex-grow-1">
                 <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-                    <div>
-                        <h2 className="fw-bold m-0">Premium Checkout</h2>
-                        <p className="text-secondary small m-0">Generate professional tax invoices instantly</p>
+                    <div className="d-flex align-items-center gap-3">
+                        <div>
+                            <h2 className="fw-bold m-0">Premium Checkout</h2>
+                            <p className="text-secondary small m-0">Generate professional tax invoices instantly</p>
+                        </div>
+                        <button 
+                            type="button" 
+                            onClick={handleClearAll}
+                            className="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold border-2 d-flex align-items-center gap-2 custom-hover-lift"
+                            style={{ fontSize: '0.75rem' }}
+                        >
+                            🧹 Clear Workspace
+                        </button>
                     </div>
                     {user?.shopLogo && <img src={user.shopLogo} alt="Shop Logo" style={{ maxHeight: '50px', objectFit: 'contain' }} />}
                 </motion.div>
