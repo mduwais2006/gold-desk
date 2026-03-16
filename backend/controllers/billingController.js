@@ -50,7 +50,7 @@ const createBill = async (req, res) => {
         
         const billSnapshot = await db.collection('users').doc(userId).collection('bills').get();
         const billCount = billSnapshot.size + 1;
-        const billNumber = `${shopInitial}${yearYY}${1000 + billCount}`;
+        const billNumber = `${shopInitial}${yearYY}${String(billCount).padStart(2, '0')}`;
 
         const billData = {
             userId,

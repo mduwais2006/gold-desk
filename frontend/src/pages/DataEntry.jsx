@@ -112,7 +112,7 @@ const DataEntry = () => {
                 const shopInitial = user.shopName.charAt(0).toUpperCase();
                 const yearYY = new Date().getFullYear().toString().slice(-2);
                 const nextCount = res.data.length + 1;
-                setFormData(prev => ({ ...prev, billNumber: `${shopInitial}${yearYY}${1000 + nextCount}` }));
+                setFormData(prev => ({ ...prev, billNumber: `${shopInitial}${yearYY}${String(nextCount).padStart(2, '0')}` }));
             }
         } catch (error) {
             toast.error('Failed to fetch reports');
@@ -186,7 +186,7 @@ const DataEntry = () => {
                 return {
                     ...prev,
                     date: getCurrentDateTimeLocal(),
-                    billNumber: `${shopInitial}${yearYY}${1000 + nextCount}`,
+                    billNumber: `${shopInitial}${yearYY}${String(nextCount).padStart(2, '0')}`,
                     itemType: 'Gold',
                     itemName: 'Chain',
                     grams: '',

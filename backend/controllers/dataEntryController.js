@@ -62,7 +62,7 @@ const createDataEntry = async (req, res) => {
 
         const entrySnapshot = await db.collection('users').doc(userId).collection('dataEntries').get();
         const entryCount = entrySnapshot.size + 1;
-        const billNumber = req.body.billNumber || `${shopInitial}${yearYY}${1000 + entryCount}`;
+        const billNumber = req.body.billNumber || `${shopInitial}${yearYY}${String(entryCount).padStart(2, '0')}`;
 
         const newEntry = {
             userId,

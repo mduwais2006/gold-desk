@@ -195,7 +195,7 @@ const Billing = () => {
                     const shopInitial = user.shopName.charAt(0).toUpperCase();
                     const yearYY = new Date().getFullYear().toString().slice(-2);
                     const nextCount = res.data.length + 1;
-                    setValue('billNumber', `${shopInitial}${yearYY}${1000 + nextCount}`);
+                    setValue('billNumber', `${shopInitial}${yearYY}${String(nextCount).padStart(2, '0')}`);
                 }
             } catch (error) {
                 console.error('Failed to fetch bill count', error);
