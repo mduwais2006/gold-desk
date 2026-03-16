@@ -542,12 +542,35 @@ body {
 }
 
 @media print {
+  /* Hide all UI chrome */
+  .sidebar,
+  .mobile-header,
+  .main-content > *:not(.receipt-container),
+  .btn,
+  nav,
+  footer,
+  .modal,
+  .modal-backdrop,
+  .toast-container,
+  .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Reset body layout for print */
+  body {
+    overflow: visible !important;
+    background: white !important;
+  }
+
   body * {
     visibility: hidden;
   }
+
   .receipt-container, .receipt-container * {
     visibility: visible;
   }
+
   .receipt-container {
     position: absolute;
     left: 0;
@@ -556,6 +579,8 @@ body {
     background: white !important;
     color: black !important;
     display: block !important;
+    margin: 0;
+    padding: 0;
   }
 
   /* Shared Print Styles */

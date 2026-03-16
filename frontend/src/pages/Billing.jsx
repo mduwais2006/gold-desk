@@ -9,7 +9,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { usePrinter } from '../context/PrinterContext';
-import LoadingSequence from '../components/LoadingSequence';
 import Receipt from '../components/Receipt';
 
 
@@ -377,41 +376,7 @@ const Billing = () => {
         }
     };
 
-    if (!isPrinterActive && !isReconnecting) {
-        return (
-            <div className="d-flex">
-                <Sidebar />
-                <div className="main-content flex-grow-1 d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5 }}
-                        className="text-center glass-panel p-5 rounded-5 shadow-lg border-0 position-relative overflow-hidden"
-                        style={{ maxWidth: '500px' }}
-                    >
-                        <div className="position-absolute top-0 start-0 w-100 bg-warning" style={{ height: '6px' }}></div>
-                        <h1 className="display-1 mb-4" style={{ filter: 'drop-shadow(0px 10px 15px rgba(212,175,55,0.3))' }}>📠🔌</h1>
-                        <h3 className="fw-900 mb-3 text-uppercase tracking-tighter text-white" style={{ textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>Hardware Lock</h3>
-                        <p className="text-secondary mb-4 fs-6 fw-bold">
-                            To maintain premium security and synchronous performance, the Billing Engine is locked until your <b className="text-accent-primary">Physical POS Printer</b> is officially connected.
-                        </p>
-                        <button
-                            className="btn btn-advanced w-100 py-3 d-flex align-items-center justify-content-center gap-2"
-                            onClick={() => navigate('/settings')}
-                        >
-                            <span className="spinner-grow spinner-grow-sm text-dark"></span>
-                            Connect Machine in Settings
-                        </button>
-                    </motion.div>
-
-                </div>
-            </div>
-        );
-    }
-
-    if (isReconnecting) {
-        return <LoadingSequence text="Syncing with Hardware..." fullScreen={true} />;
-    }
+    // Browser print is always available - no hardware lock needed
 
     return (
         <div className="d-flex theme-colorful">
@@ -692,7 +657,7 @@ const Billing = () => {
                                     className="btn btn-advanced w-100 py-3 fs-5"
                                     disabled={isSaving || calculatedItems.length === 0}
                                 >
-                                    {isSaving ? 'Processing Securely...' : `Generate Bill (${paymentMode.toUpperCase()}) 🧾`}
+                                    {isSaving ? 'Processing Securely...' : `Generate Bill & Print (${paymentMode.toUpperCase()}) 🖨️`}
                                 </motion.button>
 
                             ) : (
@@ -708,7 +673,26 @@ const Billing = () => {
                                 </motion.div>
                             )}
 
-                            <small className="text-center d-block mt-3 text-secondary opacity-50">Authorized Invoice Generation</small>
+                            {/* Reprint last bill button */}
+                            {printData && (
+                                <motion.button
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    whileHover={{ scale: 1.01 }}
+                                    type="button"
+                                    className="btn btn-outline-secondary w-100 py-2 mt-2 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+                                    onClick={() => window.print()}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                    Reprint Last Bill
+                                </motion.button>
+                            )}
+
+                            {/* Printer Ready Badge */}
+                            <div className="d-flex align-items-center justify-content-center gap-2 mt-3">
+                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', display: 'inline-block', boxShadow: '0 0 6px #22c55e' }}></span>
+                                <small className="text-secondary" style={{ fontSize: '0.7rem' }}>🖨️ Printer: Ready — Browser will open the print dialog</small>
+                            </div>
                         </motion.div>
                     </div>
                 </div>

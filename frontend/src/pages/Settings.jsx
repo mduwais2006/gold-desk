@@ -847,6 +847,60 @@ const Settings = () => {
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            {/* Print Format Settings */}
+                                            <hr className="my-3" />
+                                            <div className="d-flex flex-column gap-3">
+                                                <div>
+                                                    <label className="small fw-bold text-secondary mb-2 d-block">🖨️ Print Paper Format</label>
+                                                    <div className="d-flex gap-2">
+                                                        <button
+                                                            type="button"
+                                                            className={`btn btn-sm flex-grow-1 fw-bold ${localStorage.getItem('printFormat') !== 'thermal' ? 'btn-gold' : 'btn-outline-secondary'}`}
+                                                            onClick={() => {
+                                                                localStorage.setItem('printFormat', 'a4');
+                                                                toast.success('Print format: A4 Invoice');
+                                                                window.location.reload();
+                                                            }}
+                                                        >
+                                                            📄 A4 Invoice
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className={`btn btn-sm flex-grow-1 fw-bold ${localStorage.getItem('printFormat') === 'thermal' ? 'btn-gold' : 'btn-outline-secondary'}`}
+                                                            onClick={() => {
+                                                                localStorage.setItem('printFormat', 'thermal');
+                                                                toast.success('Print format: Thermal (80mm)');
+                                                                window.location.reload();
+                                                            }}
+                                                        >
+                                                            🧾 Thermal (80mm)
+                                                        </button>
+                                                    </div>
+                                                    <p className="small text-secondary mt-1 mb-0">
+                                                        {localStorage.getItem('printFormat') === 'thermal'
+                                                            ? '✅ Thermal mode: Narrow receipt format for 80mm rolls'
+                                                            : '✅ A4 mode: Full professional invoice layout'
+                                                        }
+                                                    </p>
+                                                </div>
+                                                <div className="d-flex align-items-center gap-3 p-2 border rounded-3 bg-light-subtle">
+                                                    <div>
+                                                        <p className="small fw-bold mb-0">🖨️ Printer Connection</p>
+                                                        <p className="small text-secondary mb-0">Use any USB, WiFi, or Bluetooth printer. Your OS manages the connection.</p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-sm btn-outline-primary fw-bold text-nowrap"
+                                                        onClick={() => {
+                                                            toast.info('Opening system print dialog...', { autoClose: 2000 });
+                                                            setTimeout(() => window.print(), 500);
+                                                        }}
+                                                    >
+                                                        Test Print
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
