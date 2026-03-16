@@ -8,6 +8,7 @@ import Swal from 'sweetalert2';
 const Signup = () => {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const { register: registerUser } = useAuth();
     const navigate = useNavigate();
 
@@ -111,12 +112,22 @@ const Signup = () => {
 
                     <div>
                         <label className="form-label small fw-semibold">Password</label>
-                        <input
-                            type="password"
-                            className="form-control w-100 form-control-glass"
-                            placeholder="••••••••"
-                            {...register('password', { required: 'Password is required', minLength: { value: 6, message: 'Min 6 chars' } })}
-                        />
+                        <div className="position-relative">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                className="form-control w-100 form-control-glass pe-5"
+                                placeholder="••••••••"
+                                {...register('password', { required: 'Password is required', minLength: { value: 6, message: 'Min 6 chars' } })}
+                            />
+                            <button
+                                type="button"
+                                className="btn btn-link position-absolute end-0 top-50 translate-middle-y text-secondary p-2 me-2 border-0 shadow-none"
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{ zIndex: 10 }}
+                            >
+                                <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                            </button>
+                        </div>
                         {errors.password && <span className="text-danger small mt-1 d-block">{errors.password.message}</span>}
                     </div>
 

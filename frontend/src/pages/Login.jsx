@@ -9,6 +9,7 @@ import { auth, setupRecaptcha, signInWithPhoneNumber } from '../utils/firebase';
 const Login = () => {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -109,12 +110,22 @@ const Login = () => {
 
                     <div>
                         <label className="form-label small fw-semibold">Password</label>
-                        <input
-                            type="password"
-                            className="form-control w-100 form-control-glass"
-                            placeholder="••••••••"
-                            {...register('password', { required: 'Password is required' })}
-                        />
+                        <div className="position-relative">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                className="form-control w-100 form-control-glass pe-5"
+                                placeholder="••••••••"
+                                {...register('password', { required: 'Password is required' })}
+                            />
+                            <button
+                                type="button"
+                                className="btn btn-link position-absolute end-0 top-50 translate-middle-y text-secondary p-2 me-2 border-0 shadow-none"
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{ zIndex: 10 }}
+                            >
+                                <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                            </button>
+                        </div>
                         <div className="text-end mt-1">
                             <Link to="/forgot-password" title="Forgot Password" className="small text-secondary fw-semibold text-decoration-none hover-gold transition-all">
                                 Forgot Password?
