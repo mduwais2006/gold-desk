@@ -339,6 +339,7 @@ const DataEntry = () => {
 
             // Reformat data structure into Billing Format for the translator
             const payload = {
+                billNumber: entry.billNumber,
                 customerName: entry.customerName || 'Quick Entry Mode',
                 mobile: entry.mobile || 'N/A',
                 subTotal: entry.finalTotal + Number(entry.negotiableAmount || 0) - ((entry.finalTotal + Number(entry.negotiableAmount || 0)) * (entry.gstPercentage || 0) / (100 + (entry.gstPercentage || 0))),
