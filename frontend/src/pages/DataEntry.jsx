@@ -168,10 +168,11 @@ const DataEntry = () => {
             localStorage.setItem('pendingBillingItems', JSON.stringify(pendingItems));
 
             // Pass customer details for seamless billing continuation
-            if (formData.customerName || formData.mobile) {
+            if (formData.customerName || formData.mobile || formData.billNumber) {
                 localStorage.setItem('pendingCustomerDetails', JSON.stringify({
                     customerName: formData.customerName,
-                    mobile: formData.mobile
+                    mobile: formData.mobile,
+                    billNumber: formData.billNumber
                 }));
             }
 

@@ -186,14 +186,17 @@ const Billing = () => {
                 const customerDetails = JSON.parse(pendingCustomerStr);
                 if (customerDetails.customerName) setValue('customerName', customerDetails.customerName);
                 if (customerDetails.mobile) setValue('mobile', customerDetails.mobile);
+                if (customerDetails.billNumber) setValue('billNumber', customerDetails.billNumber);
                 localStorage.removeItem('pendingCustomerDetails');
             } catch (e) {
                 console.error('Failed to parse pending customer details', e);
             }
         }
 
-        // Auto-suggest next bill number
+        // Auto-suggest next bill number (only if not already provided from Data Entry)
         const fetchNextBillNumber = async () => {
+            if (watch('billNumber')) return; // Guard: Don't overwrite existing sync
+
             try {
                 const res = await api.get('/bills');
                 if (user?.shopName) {
@@ -207,7 +210,7 @@ const Billing = () => {
             }
         };
         fetchNextBillNumber();
-    }, [setValue, user]);
+    }, [setValue, user, watch]);
 
     // Ensure GST is auto-filled once user profile loads (if not already set by draft)
     useEffect(() => {
