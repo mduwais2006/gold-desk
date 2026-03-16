@@ -212,32 +212,49 @@ const DataEntry = () => {
         return d;
     }, []);
 
-    const filteredReports = reports.filter(item => {
-        const itemDate = new Date(item.date);
-        
-        // Strictly show only last 6 months of data
-        if (itemDate < reportsCutoffDate) return false;
+    const filteredReports = useMemo(() => {
+        return reports.filter(r => {
+            const dateObj = new Date(r.date);
+            // Strictly show only last 6 months of data
+            if (dateObj < reportsCutoffDate) return false;
 
-        const itemMonth = (itemDate.getMonth() + 1).toString().padStart(2, '0');
-        const itemYear = itemDate.getFullYear().toString();
+            const matchesDate = !filters.searchDate || r.date.startsWith(filters.searchDate);
+            const matchesTime = !filters.searchTime || r.date.includes(filters.searchTime);
+            const matchesMonth = !filters.searchMonth || (dateObj.getMonth() + 1).toString().padStart(2, '0') === filters.searchMonth;
+            const matchesYear = !filters.searchYear || dateObj.getFullYear().toString() === filters.searchYear;
+            
+            const query = filters.searchQuery.toLowerCase();
+            const matchesQuery = !query || 
+                (r.customerName || '').toLowerCase().includes(query) || 
+                (r.mobile || '').includes(query) ||
+                (r.billNumber || '').toLowerCase().includes(query);
 
-        // Exact local conversions mapping to user timezone for strict match
-        const localDateObj = new Date(itemDate.getTime() - (itemDate.getTimezoneOffset() * 60000));
-        const itemDay = localDateObj.toISOString().split('T')[0];
-        const itemTime = localDateObj.toISOString().split('T')[1].slice(0, 8); // "HH:mm:ss"
+            return matchesDate && matchesTime && matchesMonth && matchesYear && matchesQuery;
+        });
+    }, [reports, filters, reportsCutoffDate]);
 
-        const matchesDate = !filters.searchDate || itemDay === filters.searchDate;
-        const matchesTime = !filters.searchTime || itemTime.startsWith(filters.searchTime);
-        const matchesMonth = !filters.searchMonth || itemMonth === filters.searchMonth;
-        const matchesYear = !filters.searchYear || itemYear === filters.searchYear;
-        const matchesQuery = !filters.searchQuery || [
-            item.customerName || '',
-            item.mobile || ''
-        ].some(field => field.toLowerCase().includes(filters.searchQuery.toLowerCase()));
+    const handleBulkDelete = async () => {
+        if (!filters.searchMonth || !filters.searchYear) {
+            return toast.warning('Please select a specific Month and Year for bulk deletion.');
+        }
 
-        return matchesDate && matchesTime && matchesMonth && matchesYear && matchesQuery;
+        const confirmText = `Are you sure you want to delete ALL entries for ${months.find(m => m.val === filters.searchMonth)?.label} ${filters.searchYear}?`;
+        if (!window.confirm(confirmText)) return;
 
-    });
+        try {
+            setIsLoading(true);
+            const res = await api.post('/data-entry/bulk-delete', {
+                month: filters.searchMonth,
+                year: filters.searchYear
+            });
+            toast.success(res.data.message);
+            fetchReports(); // Refresh list
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Bulk delete failed');
+        } finally {
+            setIsLoading(false);
+        }
+    };
     
     // Calculate total revenue for the filtered set
     const totalRevenue = filteredReports.reduce((sum, r) => sum + (r.finalTotal || 0), 0);
@@ -246,6 +263,7 @@ const DataEntry = () => {
         return filteredReports.map(item => ({
             'Date': new Date(item.date).toLocaleDateString(),
             'Time': new Date(item.date).toLocaleTimeString(),
+            'Bill Number': item.billNumber || '-',
             'Customer': item.customerName || '-',
             'Mobile': item.mobile || '-',
             'Item Type': item.itemType || '-',
@@ -663,13 +681,20 @@ const DataEntry = () => {
                                                 </select>
                                             </div>
 
-                                            <div className="col-12 col-md-2">
+                                            <div className="col-12 col-md-2 d-flex gap-2">
                                                 <button
-                                                    className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+                                                    className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold px-2"
                                                     onClick={() => setFilters({ searchDate: '', searchTime: '', searchMonth: '', searchYear: currentYear.toString(), searchQuery: '' })}
                                                     title="Reset All Filters"
                                                 >
-                                                    <i className="bi bi-x-circle"></i> Clear Filters
+                                                    Reset
+                                                </button>
+                                                <button
+                                                    className="btn btn-danger w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold px-2"
+                                                    onClick={handleBulkDelete}
+                                                    title="Bulk Delete entries for selected month"
+                                                >
+                                                    🗑️ Bulk
                                                 </button>
                                             </div>
                                         </div>
@@ -677,20 +702,17 @@ const DataEntry = () => {
 
                                     {/* Search + Export Row */}
                                     <div className="d-flex flex-wrap align-items-center gap-3">
-                                        <div className="input-group flex-grow-1" style={{ maxWidth: '420px' }}>
-                                            <span className="input-group-text bg-transparent" style={{ border: '1px solid var(--border-color)', borderRight: 'none' }}>
-                                                <i className="bi bi-search text-secondary"></i>
-                                            </span>
-                                            <input
-                                                type="text"
-                                                className="form-control form-control-glass"
-                                                placeholder="Search by customer name or mobile..."
-                                                style={{ borderLeft: 'none' }}
-                                                value={filters.searchQuery}
-                                                onChange={e => setFilters({ ...filters, searchQuery: e.target.value })}
-                                                autoComplete="off"
-                                            />
-
+                                        <div className="flex-grow-1">
+                                            <div className="input-group input-group-sm">
+                                                <span className="input-group-text bg-transparent border-end-0 border-color">🔍</span>
+                                                <input 
+                                                    type="text" 
+                                                    className="form-control form-control-glass border-start-0" 
+                                                    placeholder="Search by Name, Mobile or Bill #..." 
+                                                    value={filters.searchQuery}
+                                                    onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
+                                                />
+                                            </div>
                                         </div>
 
                                         <div className="d-flex gap-2 ms-auto">
@@ -736,8 +758,8 @@ const DataEntry = () => {
                                 <table className="table table-hover mb-0 align-middle">
                                     <thead className="thead-glass">
                                         <tr>
-                                            <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Date</th>
-                                            <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Customer</th>
+                                            <th className="px-4 py-3 text-start border-0">Date & Bill #</th>
+                                            <th className="px-4 py-3 text-start border-0">Customer</th>
                                             <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Items</th>
                                             <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Weight</th>
                                             <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Rate/g</th>
@@ -764,6 +786,7 @@ const DataEntry = () => {
                                                     <td className="px-4 text-secondary small">
                                                         {new Date(entry.date).toLocaleDateString() || '-'} <br />
                                                         <span className="text-muted fw-bold">{new Date(entry.date).toLocaleTimeString()}</span>
+                                                        {entry.billNumber && <div className="small text-primary fw-bold mt-1">Bill #{entry.billNumber}</div>}
                                                     </td>
                                                     <td className="fw-bold">{entry.customerName || '-'} <br /><span className="small text-secondary fw-normal">{entry.mobile}</span></td>
                                                     <td className="fw-bold text-secondary">{entry.itemType} - {entry.itemName}</td>

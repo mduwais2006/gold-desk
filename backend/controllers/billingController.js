@@ -42,8 +42,14 @@ const createBill = async (req, res) => {
             return res.status(400).json({ message: 'Please add customer and items' });
         }
 
+        // Generate sequential bill number for the user
+        const billSnapshot = await db.collection('users').doc(userId).collection('bills').get();
+        const billCount = billSnapshot.size + 1;
+        const billNumber = `GD-${1000 + billCount}`;
+
         const billData = {
             userId,
+            billNumber,
             customerName,
             mobile,
             items,
@@ -72,7 +78,7 @@ const createBill = async (req, res) => {
         }
         await batch.commit();
 
-        res.status(201).json({ id: newBill.id, customerName, finalTotal });
+        res.status(201).json({ id: newBill.id, billNumber, customerName, finalTotal });
     } catch (error) {
         console.error("Billing Error", error);
         res.status(500).json({ message: 'Error creating bill' });

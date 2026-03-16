@@ -34,7 +34,7 @@ const Receipt = forwardRef(({ billData }, ref) => {
                     <div className="a4-invoice-meta">
                         <div className="meta-item"><span className="label">TAX INVOICE</span></div>
                         <div className="meta-item"><span className="label">Date:</span> {date}</div>
-                        <div className="meta-item"><span className="label">Invoice #:</span> INV-{Math.floor(1000 + Math.random() * 9000)}</div>
+                        <div className="meta-item"><span className="label">Bill #:</span> {billData.billNumber || 'N/A'}</div>
                     </div>
                 </header>
 
@@ -97,6 +97,7 @@ const Receipt = forwardRef(({ billData }, ref) => {
                 </div>
 
                 <div className="thermal-customer">
+                    <p>Bill: {billData.billNumber || 'N/A'}</p>
                     <p>Cust: {customerName}</p>
                     <p>Mob: {mobile}</p>
                     <p>Date: {date}</p>

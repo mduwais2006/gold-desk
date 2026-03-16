@@ -288,15 +288,15 @@ const Billing = () => {
             // ----------------------------------------------------
             // BROWSER PRINT ENGINE (RESPONSIVE HTML)
             // ----------------------------------------------------
-            setPrintData({ ...payload, gstPercentage: parseFloat(data.gst) || 0 });
+            setPrintData({ ...payload, billNumber: res.data.billNumber, gstPercentage: parseFloat(data.gst) || 0 });
             setTimeout(() => {
                 window.print();
             }, 500);
 
             if (printedOnHardware) {
-                toast.success('Bill Generated & Printed Successfully! 📠');
+                toast.success(`Bill ${res.data.billNumber} Generated & Printed! 📠`);
             } else {
-                toast.info('Digital Bill Generated Successfully! 🖨️');
+                toast.success(`Bill ${res.data.billNumber} Saved Successfully! 📑`);
             }
 
             localStorage.removeItem('billingFormDraft'); // Clear saved draft

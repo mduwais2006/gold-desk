@@ -54,8 +54,14 @@ const createDataEntry = async (req, res) => {
             finalTotal
         } = req.body;
 
+        // Generate sequential bill number for the user
+        const entrySnapshot = await db.collection('users').doc(userId).collection('dataEntries').get();
+        const entryCount = entrySnapshot.size + 1;
+        const billNumber = `GD-${1000 + entryCount}`;
+
         const newEntry = {
             userId,
+            billNumber,
             date: date || new Date().toISOString(),
             customerName: customerName || '',
             mobile: mobile || '',
@@ -112,8 +118,53 @@ const deleteDataEntry = async (req, res) => {
     }
 };
 
+// @desc    Bulk delete entries based on filters
+// @route   POST /api/data-entry/bulk-delete
+// @access  Private
+const bulkDeleteDataEntries = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { dateRange, month, year } = req.body;
+        let query = db.collection('users').doc(userId).collection('dataEntries');
+
+        // Note: Simple bulk delete strategy - fetch IDs then batch delete
+        const snapshot = await query.get();
+        const batch = db.batch();
+        let count = 0;
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const entryDate = new Date(data.date);
+            let shouldDelete = false;
+
+            if (month && year) {
+                if (entryDate.getMonth() + 1 === Number(month) && entryDate.getFullYear() === Number(year)) {
+                    shouldDelete = true;
+                }
+            } else if (dateRange) {
+                // ... handle date range logic if needed ...
+            }
+
+            if (shouldDelete) {
+                batch.delete(doc.ref);
+                count++;
+            }
+        });
+
+        if (count > 0) {
+            await batch.commit();
+        }
+
+        res.status(200).json({ message: `Successfully deleted ${count} entries.`, count });
+    } catch (error) {
+        console.error('Bulk Delete Error:', error);
+        res.status(500).json({ message: 'Failed to perform bulk deletion.' });
+    }
+};
+
 module.exports = {
     getDataEntries,
     createDataEntry,
-    deleteDataEntry
+    deleteDataEntry,
+    bulkDeleteDataEntries
 };
