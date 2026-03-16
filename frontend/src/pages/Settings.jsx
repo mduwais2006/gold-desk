@@ -884,21 +884,41 @@ const Settings = () => {
                                                         }
                                                     </p>
                                                 </div>
-                                                <div className="d-flex align-items-center gap-3 p-2 border rounded-3 bg-light-subtle">
-                                                    <div>
-                                                        <p className="small fw-bold mb-0">🖨️ Printer Connection</p>
-                                                        <p className="small text-secondary mb-0">Use any USB, WiFi, or Bluetooth printer. Your OS manages the connection.</p>
+                                                <div className="border rounded-3 overflow-hidden">
+                                                    <div className="d-flex align-items-center justify-content-between px-3 py-2" style={{ background: 'var(--accent-soft)', borderBottom: '1px solid var(--border-color)' }}>
+                                                        <span className="small fw-bold" style={{ color: 'var(--accent-primary)' }}>🖨️ Supported Printers</span>
+                                                        <span className="badge rounded-pill" style={{ background: '#22c55e', fontSize: '0.65rem' }}>All Ready</span>
                                                     </div>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-sm btn-outline-primary fw-bold text-nowrap"
-                                                        onClick={() => {
-                                                            toast.info('Opening system print dialog...', { autoClose: 2000 });
-                                                            setTimeout(() => window.print(), 500);
-                                                        }}
-                                                    >
-                                                        Test Print
-                                                    </button>
+                                                    <div className="d-flex flex-column gap-0">
+                                                        {[
+                                                            { icon: '🖥️', label: 'Wired USB Printer', desc: 'Plug in USB cable → install driver → select in print dialog', badge: '✅ Supported' },
+                                                            { icon: '📶', label: 'WiFi / Network Printer', desc: 'Connect to same WiFi → OS detects automatically', badge: '✅ Supported' },
+                                                            { icon: '📡', label: 'Bluetooth Printer (Optional)', desc: 'Pair via OS settings → appears in print dialog', badge: '✅ Optional' },
+                                                        ].map((p, i) => (
+                                                            <div key={i} className="d-flex align-items-start gap-3 px-3 py-2" style={{ borderBottom: i < 2 ? '1px solid var(--border-color)' : 'none' }}>
+                                                                <span style={{ fontSize: '1.2rem', lineHeight: 1.4 }}>{p.icon}</span>
+                                                                <div className="flex-grow-1">
+                                                                    <p className="small fw-bold mb-0">{p.label} <span className="text-success" style={{ fontSize: '0.65rem' }}>{p.badge}</span></p>
+                                                                    <p className="small text-secondary mb-0" style={{ fontSize: '0.72rem' }}>{p.desc}</p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="px-3 py-2" style={{ borderTop: '1px solid var(--border-color)', background: 'var(--bg-input)' }}>
+                                                        <p className="small text-secondary mb-2" style={{ fontSize: '0.72rem' }}>
+                                                            💡 <strong>How to use:</strong> Just click <em>Generate Bill</em> in Billing — the browser opens your OS print dialog automatically. Pick any installed printer.
+                                                        </p>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-sm btn-gold w-100 fw-bold"
+                                                            onClick={() => {
+                                                                toast.info('Opening system print dialog — select any printer!', { autoClose: 2500 });
+                                                                setTimeout(() => window.print(), 600);
+                                                            }}
+                                                        >
+                                                            🖨️ Test All Printers (Open Print Dialog)
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
