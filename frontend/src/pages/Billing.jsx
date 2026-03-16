@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { usePrinter } from '../context/PrinterContext';
 import LoadingSequence from '../components/LoadingSequence';
+import Receipt from '../components/Receipt';
 
 
 const Billing = () => {
@@ -19,6 +20,7 @@ const Billing = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [paymentMode, setPaymentMode] = useState('cash'); // 'cash' or 'upi'
     const [isSensing, setIsSensing] = useState(false);
+    const [printData, setPrintData] = useState(null);
     const autoPrintUpi = localStorage.getItem('autoPrintUpi') !== 'false';
 
     // Auto-load draft if returning from Data Entry calculator
@@ -282,6 +284,14 @@ const Billing = () => {
 
             // Fallback & Digital Record (PDF)
             await generateInvoicePdf({ ...payload, gstPercentage: parseFloat(data.gst) || 0 });
+
+            // ----------------------------------------------------
+            // BROWSER PRINT ENGINE (RESPONSIVE HTML)
+            // ----------------------------------------------------
+            setPrintData({ ...payload, gstPercentage: parseFloat(data.gst) || 0 });
+            setTimeout(() => {
+                window.print();
+            }, 500);
 
             if (printedOnHardware) {
                 toast.success('Bill Generated & Printed Successfully! 📠');
@@ -623,6 +633,9 @@ const Billing = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Hidden Receipt for Browser Printing */}
+            <Receipt billData={printData} />
         </div>
     );
 };

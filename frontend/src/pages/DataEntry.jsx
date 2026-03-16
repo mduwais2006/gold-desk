@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { usePrinter } from '../context/PrinterContext';
 import { getAppTime } from '../utils/timeUtils';
 import LoadingSequence from '../components/LoadingSequence';
+import Receipt from '../components/Receipt';
 
 
 const getCurrentDateTimeLocal = () => {
@@ -26,6 +27,7 @@ const DataEntry = () => {
     const [activeTab, setActiveTab] = useState('entry'); // 'entry' or 'reports'
     const [isLoading, setIsLoading] = useState(false);
     const [deleteTargetId, setDeleteTargetId] = useState(null);
+    const [printData, setPrintData] = useState(null);
 
     // Calculator / Entry State
     const [formData, setFormData] = useState({
@@ -336,6 +338,14 @@ const DataEntry = () => {
                 console.error("Hardware print failed:", printErr);
                 toast.error(printErr.message || "Bluetooth printer unresponsive.");
             }
+
+            // ----------------------------------------------------
+            // BROWSER PRINT ENGINE (RESPONSIVE HTML)
+            // ----------------------------------------------------
+            setPrintData(payload);
+            setTimeout(() => {
+                window.print();
+            }, 500);
 
             // Always generate a digital PDF as fallback
             await generateInvoicePdf(payload);
@@ -864,6 +874,9 @@ const DataEntry = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Hidden Receipt for Browser Printing */}
+            <Receipt billData={printData} />
         </div>
     );
 };
