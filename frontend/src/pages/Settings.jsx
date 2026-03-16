@@ -396,19 +396,10 @@ const Settings = () => {
                 return toast.error('Web Bluetooth API is not supported in this browser. Please use Chrome/Edge on Desktop or Android.');
             }
 
-            toast.info('Opening Bluetooth Picker... Please wait for device names to resolve.', { autoClose: 3000 });
+            toast.info('Opening Bluetooth Picker... Tip: If you see "Unknown Device", wait 5 seconds for the name to resolve.', { autoClose: 5000 });
             
             const device = await navigator.bluetooth.requestDevice({
-                filters: [
-                    { namePrefix: 'BT' },
-                    { namePrefix: 'POS' },
-                    { namePrefix: 'RPP' },
-                    { namePrefix: 'MTP' },
-                    { namePrefix: 'Thermal' },
-                    { namePrefix: 'Inner' },
-                    { services: ['000018f0-0000-1000-8000-00805f9b34fb'] },
-                    { services: ['0000ffe0-0000-1000-8000-00805f9b34fb'] }
-                ],
+                acceptAllDevices: true,
                 optionalServices: [
                     '000018f0-0000-1000-8000-00805f9b34fb', 
                     '0000fee7-0000-1000-8000-00805f9b34fb',
