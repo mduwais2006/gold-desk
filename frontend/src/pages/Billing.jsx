@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Sidebar from '../components/Sidebar';
 import api from '../utils/api';
 import { toast } from 'react-toastify';
@@ -21,6 +21,7 @@ const Billing = () => {
     const [paymentMode, setPaymentMode] = useState('cash'); // 'cash' or 'upi'
     const [isSensing, setIsSensing] = useState(false);
     const [printData, setPrintData] = useState(null);
+    const summaryRef = useRef(null);
     const autoPrintUpi = localStorage.getItem('autoPrintUpi') !== 'false';
 
     // Auto-load draft if returning from Data Entry calculator
@@ -96,8 +97,13 @@ const Billing = () => {
             // Round to 2 decimal places for clarity if it's messy, though usually it'll be neat
             setValue('gst', Number(effectiveGst.toFixed(2)));
         }
-
         setSubmittedItems(items);
+        toast.info('List synchronized with Summary!');
+
+        // Smooth scroll to summary card
+        if (summaryRef.current) {
+            summaryRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     };
 
     // Memoize global calculations (Totals) based on submittedItems instead of live watchItems
@@ -379,8 +385,8 @@ const Billing = () => {
                     {user?.shopLogo && <img src={user.shopLogo} alt="Shop Logo" style={{ maxHeight: '50px', objectFit: 'contain' }} />}
                 </motion.div>
 
-                <div className="row g-4 mb-4">
-                    <div className="col-xl-9 col-lg-8">
+                <div className="row g-4 mb-5">
+                    <div className="col-12">
                         <form id="billingForm" onSubmit={handleSubmit(onSubmit)}>
                             {/* Customer Details */}
                             <motion.div
@@ -434,8 +440,8 @@ const Billing = () => {
                                 </div>
 
                                 <div className="cart-header row g-2 mb-2 d-none d-md-flex text-secondary small fw-bold text-uppercase">
-                                    <div className="col-md-3">Item Name / Description</div>
-                                    <div className="col-md-1">Weight</div>
+                                    <div className="col-md-2">Item Name / Description</div>
+                                    <div className="col-md-2">Weight</div>
                                     <div className="col-md-2">Rate/g (₹)</div>
                                     <div className="col-md-2 text-center">GST%</div>
                                     <div className="col-md-1 text-end">Tax</div>
@@ -448,11 +454,11 @@ const Billing = () => {
                                             key={field.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                                             className="row g-2 align-items-center mb-3 pb-3 border-bottom border-light position-relative"
                                         >
-                                            <div className="col-md-3">
+                                            <div className="col-md-2">
                                                 <input type="text" placeholder="e.g. Gold Chain" className="form-control form-control-glass bg-light" {...register(`items.${index}.itemName`, { required: true })} />
                                             </div>
-                                            <div className="col-md-1">
-                                                <input type="number" step="0.001" placeholder="0.00" className="form-control form-control-glass bg-light px-1 text-center" {...register(`items.${index}.weight`)} />
+                                            <div className="col-md-2">
+                                                <input type="number" step="0.001" placeholder="0.00" className="form-control form-control-glass bg-light px-3 text-center" {...register(`items.${index}.weight`)} />
                                             </div>
                                             <div className="col-md-2">
                                                 <input type="number" step="0.01" placeholder="0" className="form-control form-control-glass bg-light" {...register(`items.${index}.ratePerGram`)} />
@@ -475,7 +481,7 @@ const Billing = () => {
                                             <div className="col-md-3 d-flex align-items-center justify-content-end gap-2">
                                                 <div className="input-group input-group-sm w-100">
                                                     <span className="input-group-text border-0 fw-bold text-secondary bg-transparent">₹</span>
-                                                    <input type="number" step="0.01" className="form-control form-control-glass fw-bold text-success py-2" style={{ fontSize: '1rem' }} placeholder="0.00" {...register(`items.${index}.price`)} />
+                                                    <input type="number" step="0.01" className="form-control form-control-glass fw-bold text-success py-2 font-numeric" style={{ fontSize: '1rem' }} placeholder="0.00" {...register(`items.${index}.price`)} />
                                                 </div>
                                                 <button type="button" className="btn btn-link text-danger p-0 ms-1" onClick={() => remove(index)}>✖</button>
                                             </div>
@@ -500,11 +506,11 @@ const Billing = () => {
                         </form>
                     </div>
 
-                    <div className="col-xl-3 col-lg-4">
+                    <div className="col-12" ref={summaryRef}>
                         <motion.div
-                            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.2 }}
-                            className="glass-panel p-4 border-0 position-sticky shadow-lg"
-                            style={{ top: '20px', borderRadius: '24px' }}
+                            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}
+                            className="glass-panel p-4 border-0 shadow-lg mt-2"
+                            style={{ borderRadius: '24px' }}
                         >
                             <h5 className="fw-bold mb-4 align-items-center d-flex gap-2">
                                 📊 Summary & Payment
