@@ -192,7 +192,7 @@ const Billing = () => {
             try {
                 const res = await api.get('/bills');
                 if (user?.shopName) {
-                    const shopInitial = user.shopName.charAt(0).toUpperCase();
+                    const shopInitial = user.shopName.charAt(0).toLowerCase();
                     const yearYY = new Date().getFullYear().toString().slice(-2);
                     const nextCount = res.data.length + 1;
                     setValue('billNumber', `${shopInitial}${yearYY}${String(nextCount).padStart(2, '0')}`);

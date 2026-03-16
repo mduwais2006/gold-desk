@@ -446,6 +446,43 @@ body {
   color: var(--accent-primary) !important;
 }
 
+/* --- Advanced Search UI --- */
+.search-advanced-container {
+  transition: all 0.3s ease;
+}
+
+.search-advanced-container:focus-within {
+  transform: translateY(-2px);
+}
+
+.search-advanced-container:focus-within .bi-search {
+  color: var(--accent-primary) !important;
+  transform: scale(1.1);
+  transition: all 0.3s ease;
+}
+
+.form-control-advanced {
+  border: 1.5px solid var(--border-color) !important;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.02) !important;
+}
+
+.form-control-advanced:focus {
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 8px 25px var(--accent-soft) !important;
+  background: var(--bg-secondary) !important;
+}
+
+[data-theme='dark'] .form-control-advanced {
+  border-color: rgba(255,255,255,0.1) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+}
+
+[data-theme='dark'] .form-control-advanced:focus {
+  border-color: var(--accent-primary) !important;
+  background: #000 !important;
+}
+
+
 /* --- Responsive Print Receipt Engine --- */
 @media screen {
   .receipt-container {

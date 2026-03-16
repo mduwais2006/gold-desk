@@ -109,7 +109,7 @@ const DataEntry = () => {
             
             // Auto-suggest next bill number
             if (user?.shopName) {
-                const shopInitial = user.shopName.charAt(0).toUpperCase();
+                const shopInitial = user.shopName.charAt(0).toLowerCase();
                 const yearYY = new Date().getFullYear().toString().slice(-2);
                 const nextCount = res.data.length + 1;
                 setFormData(prev => ({ ...prev, billNumber: `${shopInitial}${yearYY}${String(nextCount).padStart(2, '0')}` }));
@@ -180,7 +180,7 @@ const DataEntry = () => {
             // localStorage.removeItem('billingFormDraft'); 
             
             setFormData(prev => {
-                const shopInitial = user?.shopName?.charAt(0).toUpperCase() || 'G';
+                const shopInitial = user?.shopName?.charAt(0).toLowerCase() || 'g';
                 const yearYY = new Date().getFullYear().toString().slice(-2);
                 const nextCount = reports.length + 2; // +1 for the one we just added, +1 for next
                 return {
@@ -727,14 +727,22 @@ const DataEntry = () => {
                                     {/* Search + Export Row */}
                                     <div className="d-flex flex-wrap align-items-center gap-3">
                                         <div className="flex-grow-1">
-                                            <div className="input-group input-group-sm">
-                                                <span className="input-group-text bg-transparent border-end-0 border-color">🔍</span>
+                                            <div className="position-relative search-advanced-container">
+                                                <i className="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary" style={{ zIndex: 5 }}></i>
                                                 <input 
                                                     type="text" 
-                                                    className="form-control form-control-glass border-start-0" 
+                                                    className="form-control form-control-advanced ps-5" 
                                                     placeholder="Search by Name, Mobile or Bill #..." 
                                                     value={filters.searchQuery}
                                                     onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
+                                                    style={{ 
+                                                        height: '48px', 
+                                                        borderRadius: '12px', 
+                                                        background: 'var(--bg-input)',
+                                                        border: '2px solid var(--border-color)',
+                                                        fontSize: '0.95rem',
+                                                        transition: 'all 0.3s ease'
+                                                    }}
                                                 />
                                             </div>
                                         </div>
