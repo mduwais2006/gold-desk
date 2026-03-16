@@ -31,6 +31,7 @@ const Billing = () => {
         defaultValues: savedDraft || {
             customerName: '',
             mobile: '',
+            billNumber: '',
             discount: '',
             gst: user?.gstPercentage || 3, 
             items: savedDraft?.items || []
@@ -185,7 +186,23 @@ const Billing = () => {
                 console.error('Failed to parse pending customer details', e);
             }
         }
-    }, [setValue]);
+
+        // Auto-suggest next bill number
+        const fetchNextBillNumber = async () => {
+            try {
+                const res = await api.get('/bills');
+                if (user?.shopName) {
+                    const shopInitial = user.shopName.charAt(0).toUpperCase();
+                    const yearYY = new Date().getFullYear().toString().slice(-2);
+                    const nextCount = res.data.length + 1;
+                    setValue('billNumber', `${shopInitial}${yearYY}${1000 + nextCount}`);
+                }
+            } catch (error) {
+                console.error('Failed to fetch bill count', error);
+            }
+        };
+        fetchNextBillNumber();
+    }, [setValue, user]);
 
     // Ensure GST is auto-filled once user profile loads (if not already set by draft)
     useEffect(() => {
@@ -239,6 +256,7 @@ const Billing = () => {
             const payload = {
                 customerName: data.customerName,
                 mobile: data.mobile,
+                billNumber: data.billNumber,
                 items: calculatedItems,
                 subTotal,
                 gst: gstAmount,
@@ -374,13 +392,17 @@ const Billing = () => {
                                     <h5 className="fw-bold m-0 text-high-contrast">Customer Information</h5>
                                 </div>
                                 <div className="row g-3">
-                                    <div className="col-md-6">
+                                    <div className="col-md-4">
                                         <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Customer Name</label>
                                         <input type="text" className="form-control form-control-glass bg-light" placeholder="Enter Full Name" {...register('customerName', { required: true })} />
                                     </div>
-                                    <div className="col-md-6">
+                                    <div className="col-md-4">
                                         <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Mobile Number</label>
-                                        <input type="tel" className="form-control form-control-glass bg-light" placeholder="+91 00000 00000" {...register('mobile', { required: true })} />
+                                        <input type="tel" className="form-control form-control-glass bg-light" placeholder="+91" {...register('mobile', { required: true })} />
+                                    </div>
+                                    <div className="col-md-4">
+                                        <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Bill Number</label>
+                                        <input type="text" className="form-control form-control-glass bg-light fw-bold text-primary" placeholder="G26101" {...register('billNumber', { required: true })} />
                                     </div>
                                 </div>
                             </motion.div>

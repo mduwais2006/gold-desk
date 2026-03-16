@@ -32,6 +32,7 @@ const DataEntry = () => {
     // Calculator / Entry State
     const [formData, setFormData] = useState({
         date: getCurrentDateTimeLocal(),
+        billNumber: '',
         customerName: location?.state?.customerName || '',
         mobile: location?.state?.mobile || '',
         itemType: 'Gold',
@@ -105,6 +106,14 @@ const DataEntry = () => {
             setIsLoading(true);
             const res = await api.get('/data-entry');
             setReports(res.data);
+            
+            // Auto-suggest next bill number
+            if (user?.shopName) {
+                const shopInitial = user.shopName.charAt(0).toUpperCase();
+                const yearYY = new Date().getFullYear().toString().slice(-2);
+                const nextCount = res.data.length + 1;
+                setFormData(prev => ({ ...prev, billNumber: `${shopInitial}${yearYY}${1000 + nextCount}` }));
+            }
         } catch (error) {
             toast.error('Failed to fetch reports');
         } finally {
@@ -170,17 +179,23 @@ const DataEntry = () => {
             // Do NOT remove billingFormDraft here, because the user might be building a multi-item bill
             // localStorage.removeItem('billingFormDraft'); 
             
-            setFormData(prev => ({
-                ...prev,
-                date: getCurrentDateTimeLocal(),
-                itemType: 'Gold',
-                itemName: 'Chain',
-                grams: '',
-                ratePerGram: '',
-                negotiableAmount: '0',
-                gstPercentage: user?.gstEnabled ? (user?.gstPercentage || 3) : 0,
-                customItemName: ''
-            }));
+            setFormData(prev => {
+                const shopInitial = user?.shopName?.charAt(0).toUpperCase() || 'G';
+                const yearYY = new Date().getFullYear().toString().slice(-2);
+                const nextCount = reports.length + 2; // +1 for the one we just added, +1 for next
+                return {
+                    ...prev,
+                    date: getCurrentDateTimeLocal(),
+                    billNumber: `${shopInitial}${yearYY}${1000 + nextCount}`,
+                    itemType: 'Gold',
+                    itemName: 'Chain',
+                    grams: '',
+                    ratePerGram: '',
+                    negotiableAmount: '0',
+                    gstPercentage: user?.gstEnabled ? (user?.gstPercentage || 3) : 0,
+                    customItemName: ''
+                };
+            });
         } catch (error) {
             toast.error('Failed to save entry');
         } finally {
@@ -491,6 +506,10 @@ const DataEntry = () => {
                                                 <input type="datetime-local" step="1" name="date" value={formData.date} onChange={handleInputChange} className="form-control form-control-glass" required />
                                             </div>
                                             <div className="col-md-4">
+                                                <label className="form-label small fw-bold text-secondary">Bill Number</label>
+                                                <input type="text" name="billNumber" value={formData.billNumber} onChange={handleInputChange} className="form-control form-control-glass fw-bold text-primary" placeholder="e.g. G26101" required />
+                                            </div>
+                                            <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">Item Type</label>
                                                 <select name="itemType" value={formData.itemType} onChange={handleInputChange} className="form-select form-control-glass">
                                                     {itemTypes.map(item => <option key={item} value={item}>{item}</option>)}
@@ -758,7 +777,7 @@ const DataEntry = () => {
                                 <table className="table table-hover mb-0 align-middle">
                                     <thead className="thead-glass">
                                         <tr>
-                                            <th className="px-4 py-3 text-start border-0">Date & Bill #</th>
+                                            <th className="px-4 py-3 text-start border-0">Bill # & Date</th>
                                             <th className="px-4 py-3 text-start border-0">Customer</th>
                                             <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Items</th>
                                             <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Weight</th>
@@ -784,9 +803,9 @@ const DataEntry = () => {
                                             filteredReports.map((entry, idx) => (
                                                 <tr key={entry.id} className="align-middle" style={{ borderBottom: '1px solid var(--border-color)' }}>
                                                     <td className="px-4 text-secondary small">
-                                                        {new Date(entry.date).toLocaleDateString() || '-'} <br />
-                                                        <span className="text-muted fw-bold">{new Date(entry.date).toLocaleTimeString()}</span>
-                                                        {entry.billNumber && <div className="small text-primary fw-bold mt-1">Bill #{entry.billNumber}</div>}
+                                                        <div className="badge bg-gold-soft text-gold border border-gold-subtle mb-1 fw-bold fs-6" style={{ fontSize: '0.85rem' }}>{entry.billNumber || 'NO-ID'}</div>
+                                                        <div className="text-muted fw-bold">{new Date(entry.date).toLocaleDateString()}</div>
+                                                        <div className="text-muted" style={{ fontSize: '0.7rem' }}>{new Date(entry.date).toLocaleTimeString()}</div>
                                                     </td>
                                                     <td className="fw-bold">{entry.customerName || '-'} <br /><span className="small text-secondary fw-normal">{entry.mobile}</span></td>
                                                     <td className="fw-bold text-secondary">{entry.itemType} - {entry.itemName}</td>
