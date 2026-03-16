@@ -140,3 +140,22 @@ export const printReceiptBluetooth = async (device, data) => {
         throw err;
     }
 };
+
+// utility to resolve "Unknown Device" by reading the actual device name from GATT Generic Access Service (0x1800)
+export const resolveDeviceName = async (device) => {
+    if (!device || !device.gatt || !device.gatt.connected) return null;
+    
+    try {
+        // Generic Access Service (standard UUID 0x1800)
+        const service = await device.gatt.getPrimaryService(0x1800);
+        // Device Name Characteristic (standard UUID 0x2A00)
+        const characteristic = await service.getCharacteristic(0x2A00);
+        const value = await characteristic.readValue();
+        const decoder = new TextDecoder('utf-8');
+        const name = decoder.decode(value);
+        return name || null;
+    } catch (error) {
+        console.warn("Could not resolve device name via GATT:", error);
+        return null;
+    }
+};

@@ -8,7 +8,7 @@ import { auth, setupRecaptcha, signInWithPhoneNumber } from '../utils/firebase';
 
 import { usePrinter } from '../context/PrinterContext';
 import { getAppTime, setAppTimeOffset, resetAppTimeOffset } from '../utils/timeUtils';
-import { printReceiptBluetooth } from '../utils/printerUtils';
+import { printReceiptBluetooth, resolveDeviceName } from '../utils/printerUtils';
 
 const Settings = () => {
     const { user, setUser, verifyOtp } = useAuth();
@@ -340,11 +340,18 @@ const Settings = () => {
     const connectDeviceFinal = async (deviceToConnect) => {
         try {
             setIsScanning(true);
-            const finalName = deviceToConnect.name || 'Unknown Billing Machine';
-            toast.info('Performing Security Handshake (System Link)...', { autoClose: 2000 });
-
-
             await deviceToConnect.gatt.connect();
+            
+            // Try to resolve hidden device name via GATT
+            let resolvedName = deviceToConnect.name;
+            if (!resolvedName || resolvedName === 'Unknown Device') {
+                toast.info('Resolving machine identity...', { autoClose: 1500 });
+                const nameFromGatt = await resolveDeviceName(deviceToConnect);
+                if (nameFromGatt) resolvedName = nameFromGatt;
+            }
+
+            const finalName = resolvedName || 'Billing Machine';
+
             setupDeviceListeners(deviceToConnect);
 
             localStorage.setItem('posPrinter', deviceToConnect.id);
