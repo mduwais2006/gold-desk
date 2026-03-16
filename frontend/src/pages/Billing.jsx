@@ -139,6 +139,11 @@ const Billing = () => {
 
     // Live Auto-Save to prevent data loss when navigating to Calculator
     useEffect(() => {
+        // Guard: Don't save if the form is essentially empty (prevents re-saving after reset)
+        if (!watchCustomerName && !watchMobile && (!watchItems || watchItems.length === 0)) {
+            return;
+        }
+
         const debounce = setTimeout(() => {
             localStorage.setItem('billingFormDraft', JSON.stringify({
                 customerName: watchCustomerName,
@@ -147,7 +152,7 @@ const Billing = () => {
                 gst: watchGst,
                 items: watchItems
             }));
-        }, 500);
+        }, 1000); // 1s debounce for better performance
         return () => clearTimeout(debounce);
     }, [watchCustomerName, watchMobile, watchDiscount, watchGst, watchItems]);
 
@@ -327,21 +332,22 @@ const Billing = () => {
             localStorage.removeItem('pendingBillingItems');
             localStorage.removeItem('pendingCustomerDetails');
 
-            // Explicitly clear form via reset
-            reset({
-                customerName: '',
-                mobile: '',
-                billNumber: '',
-                discount: '',
-                gst: user?.gstPercentage || 3,
-                items: []
-            });
-
-            // Clear summary UI state
+            // Force immediate UI reset
             setSubmittedItems([]); 
+            setPaymentMode('cash'); 
             
-            // Clean UI focus
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Explicitly clear form via reset
+            setTimeout(() => {
+                reset({
+                    customerName: '',
+                    mobile: '',
+                    billNumber: '',
+                    discount: '',
+                    gst: user?.gstPercentage || 3,
+                    items: []
+                });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 100);
 
         } catch (error) {
             console.error("Billing submission error:", error);
