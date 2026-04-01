@@ -51,7 +51,8 @@ const DataEntry = () => {
         ratePerGram: '',
         negotiableAmount: '',
         gstPercentage: user?.gstEnabled ? (user?.gstPercentage || 3) : '',
-        customItemName: ''
+        customItemName: '',
+        staffName: ''
     });
 
     // Auto-fill from billing draft if available on mount (DISABLED per user request to avoid persistent data on refresh)
@@ -274,7 +275,8 @@ const DataEntry = () => {
             ratePerGram: '',
             negotiableAmount: '',
             gstPercentage: user?.gstEnabled ? (user?.gstPercentage || 3) : '',
-            customItemName: ''
+            customItemName: '',
+            staffName: ''
         });
         fetchNextBillNumber(); // Refresh for the next session
         localStorage.removeItem('billingFormDraft');
@@ -377,6 +379,7 @@ const DataEntry = () => {
             'Time': new Date(item.date).toLocaleTimeString(),
             'Bill Number': item.billNumber || '-',
             'Customer': item.customerName || '-',
+            'Staff': item.staffName || '-',
             'Mobile': item.mobile || '-',
             'Item Type': item.itemType || '-',
             'Item Name': item.itemName || '-',
@@ -643,6 +646,10 @@ const DataEntry = () => {
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">Bill Number</label>
                                                 <input type="text" name="billNumber" value={formData.billNumber} onChange={handleInputChange} className="form-control form-control-glass fw-bold text-primary" placeholder="e.g. G26101" required autoComplete="off" />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="form-label small fw-bold text-secondary">Staff Name <span className="text-muted fw-normal">(Optional)</span></label>
+                                                <input type="text" name="staffName" value={formData.staffName} onChange={handleInputChange} className="form-control form-control-glass" placeholder="Enter Staff Name" />
                                             </div>
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">Item Type</label>
@@ -947,6 +954,7 @@ const DataEntry = () => {
                                         <tr>
                                             <th className="px-4 py-3 text-start border-0">Bill # & Date</th>
                                             <th className="px-4 py-3 text-start border-0">Customer</th>
+                                            <th className="px-4 py-3 text-start border-0">Staff</th>
                                             <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Items</th>
                                             <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Weight</th>
                                             <th className="px-4 py-3 text-secondary small fw-bold text-uppercase tracking-tighter">Rate/g</th>
@@ -958,12 +966,12 @@ const DataEntry = () => {
                                     </thead>
                                     <tbody>
                                         {isReportsLoading ? (
-                                            <tr><td colSpan="9" className="text-center py-5">
+                                            <tr><td colSpan="10" className="text-center py-5">
                                                 <LoadingSequence text="Fetching Historical Records..." />
                                             </td></tr>
                                         ) : filteredReports.length === 0 ? (
 
-                                            <tr><td colSpan="9" className="text-center py-5 text-secondary">
+                                            <tr><td colSpan="10" className="text-center py-5 text-secondary">
                                                 <h1 className="display-4 opacity-10">📂</h1>
                                                 No records found matching these filters.
                                             </td></tr>
@@ -976,6 +984,7 @@ const DataEntry = () => {
                                                         <div className="text-muted" style={{ fontSize: '0.7rem' }}>{new Date(entry.date).toLocaleTimeString()}</div>
                                                     </td>
                                                     <td className="fw-bold">{entry.customerName || '-'} <br /><span className="small text-secondary fw-normal">{entry.mobile}</span></td>
+                                                    <td className="text-secondary small">{entry.staffName || '-'}</td>
                                                     <td className="fw-bold text-secondary">{entry.itemType} - {entry.itemName}</td>
                                                     <td>{entry.grams ? `${entry.grams} g` : '-'}</td>
                                                     <td>₹ {entry.ratePerGram ? entry.ratePerGram.toLocaleString() : '-'}</td>

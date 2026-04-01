@@ -938,7 +938,7 @@ const Settings = () => {
                                                         <button className="btn btn-sm btn-gold fw-bold px-3 ms-auto" onClick={handleApplyTime}>Set</button>
                                                     </div>
                                                 </div>
-                                                <button className="btn btn-sm btn-outline-danger w-100 mt-2 fw-bold" onClick={handleResetAll}>🔄 Force Sync to Live Time</button>
+                                                <button className="btn btn-sm btn-outline-danger w-100 mt-2 fw-bold" onClick={handleResetAll}>🔄 Reset to Previous Time</button>
                                             </div>
                                         </div>
                                     </div>

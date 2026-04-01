@@ -35,6 +35,7 @@ const Billing = () => {
             mobile: '',
             billNumber: '',
             discount: '',
+            staffName: '',
             gst: user?.gstPercentage || 3, 
             items: savedDraft?.items || []
         }
@@ -167,6 +168,7 @@ const Billing = () => {
                 mobile: watchMobile,
                 discount: watchDiscount,
                 gst: watchGst,
+                staffName: watch('staffName'),
                 items: watchItems
             }));
         }, 1000); // 1s debounce for better performance
@@ -299,6 +301,7 @@ const Billing = () => {
                 customerName: data.customerName,
                 mobile: data.mobile,
                 billNumber: data.billNumber,
+                staffName: data.staffName,
                 items: calculatedItems,
                 subTotal,
                 gst: gstAmount,
@@ -383,6 +386,7 @@ const Billing = () => {
                 mobile: '',
                 billNumber: '',
                 discount: '',
+                staffName: '',
                 gst: user?.gstPercentage || 3,
                 items: []
             });
@@ -434,7 +438,7 @@ const Billing = () => {
                                     <h5 className="fw-bold m-0 text-high-contrast">Customer Information</h5>
                                 </div>
                                 <div className="row g-3">
-                                    <div className="col-md-4 position-relative">
+                                    <div className="col-md-3 position-relative">
                                         <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Customer Name</label>
                                         <input type="text" className="form-control form-control-glass bg-light" placeholder="Enter Full Name" {...register('customerName', { required: true })} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'name'} onFocus={() => setActiveSuggestionField('customerName')} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} />
                                         
@@ -456,7 +460,7 @@ const Billing = () => {
                                             </motion.div>
                                         )}
                                     </div>
-                                    <div className="col-md-4 position-relative">
+                                    <div className="col-md-3 position-relative">
                                         <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Mobile Number</label>
                                         <input type="tel" className="form-control form-control-glass bg-light" placeholder="+91" {...register('mobile', { required: true })} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'tel'} onFocus={() => setActiveSuggestionField('mobile')} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} />
                                         
@@ -478,9 +482,13 @@ const Billing = () => {
                                             </motion.div>
                                         )}
                                     </div>
-                                    <div className="col-md-4">
+                                    <div className="col-md-3">
                                         <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Bill Number</label>
                                         <input type="text" className="form-control form-control-glass bg-light fw-bold text-primary" placeholder="G26101" {...register('billNumber', { required: true })} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'off'} />
+                                    </div>
+                                    <div className="col-md-3">
+                                        <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Staff Name</label>
+                                        <input type="text" className="form-control form-control-glass bg-light" placeholder="Entry Handler" {...register('staffName')} />
                                     </div>
                                 </div>
                             </motion.div>
