@@ -32,7 +32,7 @@ const Receipt = forwardRef(({ billData }, ref) => {
                         </div>
                     </div>
                     <div className="a4-invoice-meta">
-                        <div className="meta-item"><span className="label">TAX INVOICE</span></div>
+                        <div className="meta-item"><span className="label text-uppercase fw-bold">Tax Invoice</span></div>
                         <div className="meta-item"><span className="label">Date:</span> {date}</div>
                         <div className="meta-item"><span className="label">Bill #:</span> {billData.billNumber || 'N/A'}</div>
                     </div>
@@ -41,8 +41,8 @@ const Receipt = forwardRef(({ billData }, ref) => {
                 <section className="a4-customer-section">
                     <div className="a4-billed-to">
                         <p className="section-title">Billed To:</p>
-                        <h3 className="customer-name">{customerName}</h3>
-                        <p className="customer-mobile">Mobile: {mobile}</p>
+                        <h3 className="customer-name">{customerName || 'Valued Customer'}</h3>
+                        <p className="customer-mobile">Mobile: {mobile || 'N/A'}</p>
                     </div>
                     <div className="a4-payment-info">
                          <p className="section-title">Payment Details:</p>
@@ -53,11 +53,11 @@ const Receipt = forwardRef(({ billData }, ref) => {
                 <table className="a4-table">
                     <thead>
                         <tr>
-                            <th>Item Details</th>
+                            <th style={{ textAlign: 'left' }}>Item Details</th>
                             <th>Weight (g)</th>
                             <th>Rate/g</th>
-                            <th>GST</th>
-                            <th>Total</th>
+                            <th>Tax</th>
+                            <th style={{ textAlign: 'right' }}>Total</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -67,7 +67,7 @@ const Receipt = forwardRef(({ billData }, ref) => {
                                 <td>{parseFloat(item.weight || 0).toFixed(3)}g</td>
                                 <td>₹{parseFloat(item.ratePerGram || 0).toFixed(2)}</td>
                                 <td>{gstPercentage || 0}%</td>
-                                <td className="item-price">₹{parseFloat(item.price || 0).toFixed(2)}</td>
+                                <td className="item-price" style={{ textAlign: 'right' }}>₹{parseFloat(item.price || 0).toFixed(2)}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -75,68 +75,86 @@ const Receipt = forwardRef(({ billData }, ref) => {
 
                 <div className="a4-summary-section">
                     <div className="a4-totals-box">
-                        <div className="total-row"><span>Subtotal</span><span>₹{parseFloat(subTotal || 0).toFixed(2)}</span></div>
-                        <div className="total-row"><span>Tax (GST {gstPercentage || 0}%)</span><span>+ ₹{parseFloat(gst || 0).toFixed(2)}</span></div>
-                        <div className="total-row"><span>Discount</span><span>- ₹{parseFloat(discount || 0).toFixed(2)}</span></div>
-                        <div className="total-row final"><span>Final Total</span><span className="final-value">₹{parseFloat(finalTotal || 0).toFixed(2)}</span></div>
+                        <div className="total-row"><span>Gross Subtotal</span><span>₹{parseFloat(subTotal || 0).toFixed(2)}</span></div>
+                        <div className="total-row"><span>GST Amount ({gstPercentage || 0}%)</span><span>+ ₹{parseFloat(gst || 0).toFixed(2)}</span></div>
+                        <div className="total-row"><span>Discount / Less</span><span>- ₹{parseFloat(Math.abs(discount || 0)).toFixed(2)}</span></div>
+                        <div className="divider"></div>
+                        <div className="total-row final"><span>Net Payable</span><span className="final-value">₹{parseFloat(finalTotal || 0).toFixed(2)}</span></div>
                     </div>
                 </div>
 
                 <footer className="a4-footer">
-                    <p>Thank you for shopping with us!</p>
-                    <p className="footer-small">All sales are final. Visit again!</p>
+                    <div className="footer-top">
+                        <p className="fw-bold">Terms & Conditions:</p>
+                        <ul className="terms-list">
+                            <li>All sales of gold/silver items are final.</li>
+                            <li>Please verify the weight and purity before leaving the counter.</li>
+                        </ul>
+                    </div>
+                    <div className="footer-bottom">
+                        <p>Thank you for choosing GoldDesk! Visit again for premium collections.</p>
+                        <p className="timestamp">Generated via GoldDesk SaaS Engine</p>
+                    </div>
                 </footer>
             </div>
 
-            {/* --- Compact Thermal / Mobile Layout --- */}
+            {/* --- Compact Thermal / Mobile Layout (Optimized for 80mm) --- */}
             <div className="receipt-thermal">
                 <div className="thermal-header">
                     <h2 className="thermal-shop-name">{(shopDetails?.name || 'GOLD DESK').toUpperCase()}</h2>
                     <p className="thermal-shop-address">{shopDetails?.address}</p>
-                    <div className="thermal-divider-dashed"></div>
+                    <p className="thermal-invoice-type">*** TAX INVOICE ***</p>
+                    <div className="thermal-divider-heavy"></div>
+                </div>
+
+                <div className="thermal-meta">
+                    <div className="meta-row"><span>Invoice:</span><span>{billData.billNumber || 'N/A'}</span></div>
+                    <div className="meta-row"><span>Date:</span><span>{new Date().toLocaleDateString()}</span></div>
+                    <div className="meta-row"><span>Time:</span><span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
+                    <div className="thermal-divider-heavy"></div>
                 </div>
 
                 <div className="thermal-customer">
-                    <p>Bill: {billData.billNumber || 'N/A'}</p>
-                    <p>Cust: {customerName}</p>
-                    <p>Mob: {mobile}</p>
-                    <p>Date: {date}</p>
+                    <p className="fw-bold fs-6">Customer: {customerName || 'CASH SALE'}</p>
+                    <p>Mobile: {mobile || 'N/A'}</p>
                     <div className="thermal-divider-dashed"></div>
                 </div>
 
                 <div className="thermal-items">
                     <div className="items-header">
-                        <span>Item</span>
-                        <span>Qty</span>
-                        <span>Price</span>
+                        <span className="text-start">ITEM</span>
+                        <span className="text-center">QTY</span>
+                        <span className="text-end">AMOUNT</span>
                     </div>
+                    <div className="thermal-divider-dashed"></div>
                     {items.map((item, index) => (
-                        <div key={index} className="item-row">
+                        <div key={index} className="item-entry">
                             <div className="item-main">
-                                <span className="name">{item.itemName}</span>
+                                <span className="name text-uppercase fw-bold">{item.itemName}</span>
                                 <span className="qty">1</span>
                                 <span className="price">₹{parseFloat(item.price || 0).toFixed(2)}</span>
                             </div>
-                            <div className="item-details">
-                                {item.weight}g @ ₹{item.ratePerGram}
+                            <div className="item-sub-details">
+                                {item.weight}g @ ₹{parseFloat(item.ratePerGram).toLocaleString()} / g
                             </div>
                         </div>
                     ))}
-                    <div className="thermal-divider-dashed"></div>
+                    <div className="thermal-divider-heavy" style={{ marginTop: '5px' }}></div>
                 </div>
 
                 <div className="thermal-summary">
                     <div className="summary-row"><span>Sub Total:</span><span>₹{parseFloat(subTotal || 0).toFixed(2)}</span></div>
-                    {gst > 0 && <div className="summary-row"><span>Tax (GST {gstPercentage}%):</span><span>+₹{parseFloat(gst || 0).toFixed(2)}</span></div>}
-                    {discount > 0 && <div className="summary-row"><span>Discount:</span><span>-₹{parseFloat(discount || 0).toFixed(2)}</span></div>}
-                    <div className="summary-row total"><span>TOTAL:</span><span>₹{parseFloat(finalTotal || 0).toFixed(2)}</span></div>
-                    <div className="thermal-divider-dashed"></div>
+                    {gst > 0 && <div className="summary-row"><span>GST ({gstPercentage}%):</span><span>+₹{parseFloat(gst || 0).toFixed(2)}</span></div>}
+                    {discount > 0 && <div className="summary-row"><span>Discount:</span><span>-₹{parseFloat(Math.abs(discount || 0)).toFixed(2)}</span></div>}
+                    <div className="thermal-divider-heavy"></div>
+                    <div className="summary-row grand-total"><span>NET TOTAL:</span><span>₹{parseFloat(finalTotal || 0).toFixed(2)}</span></div>
+                    <div className="thermal-divider-heavy"></div>
                 </div>
 
                 <div className="thermal-footer">
-                    <p>Mode: {(paymentMode || 'N/A').toUpperCase()}</p>
-                    <p>Thank you for your business!</p>
-                    <p>Visit Again!</p>
+                    <p className="fw-bold">Payment: {(paymentMode || 'CASH').toUpperCase()}</p>
+                    <p className="visit-msg">~ Thank you for your business ~</p>
+                    <p className="visit-msg">VISIT AGAIN!</p>
                 </div>
             </div>
         </div>

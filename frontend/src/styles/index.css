@@ -691,91 +691,54 @@ thead.thead-glass {
     width: 300px;
     background: #f8fafc !important;
     padding: 20px;
-    border-radius: 12px;
+    font-family: 'Inter', 'Courier New', monospace;
+    font-size: 10pt;
+    line-height: 1.3;
   }
-  .total-row {
+
+  .thermal-divider-heavy {
+    border-top: 2px solid #000;
+    margin: 8px 0;
+  }
+
+  .thermal-divider-dashed {
+    border-top: 1px dashed #000;
+    margin: 8px 0;
+  }
+
+  .item-entry {
+    margin-bottom: 8px;
+    page-break-inside: avoid;
+  }
+
+  .item-main {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 10pt;
-    color: #475569 !important;
-  }
-  .total-row.final {
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 2px solid #e2e8f0;
     font-weight: bold;
-    color: #1e293b !important;
-    font-size: 14pt;
+    font-size: 11pt;
   }
-  .final-value { color: #16a34a !important; }
 
-  .a4-footer {
-    margin-top: 50px;
-    text-align: center;
-    color: #94a3b8 !important;
-    font-style: italic;
+  .item-sub-details {
     font-size: 9pt;
+    color: #444 !important;
   }
 
-  /* --- TEA SHOP / THERMAL LAYOUT (Narrow Media Logic) --- */
-  /* If the media width is narrow (80mm or smaller), switch to thermal look */
-  @media (max-width: 120mm) {
-    @page {
-      margin: 0;
-    }
-    .receipt-a4 {
-      display: none;
-    }
-    .receipt-thermal {
-      display: block;
-      width: 100%;
-      padding: 5mm;
-      font-family: 'Courier New', monospace; /* Classic thermal font */
-      font-size: 9pt;
-      line-height: 1.2;
-      color: #000 !important;
-    }
-    .thermal-header { text-align: center; margin-bottom: 10px; }
-    .thermal-shop-name { font-size: 14pt; font-weight: bold; margin-bottom: 2px; }
-    .thermal-shop-address { font-size: 8pt; margin-bottom: 5px; }
-    
-    .thermal-divider-dashed {
-      border-top: 1px dashed black;
-      margin: 8px 0;
-    }
+  .grand-total {
+    font-size: 14pt !important;
+    font-weight: 900 !important;
+    padding-top: 5px;
+  }
 
-    .thermal-items .items-header {
-      display: grid;
-      grid-template-columns: 1fr 40px 80px;
-      font-weight: bold;
-      border-bottom: 1px dashed black;
-      padding-bottom: 5px;
-      margin-bottom: 5px;
-    }
-    .item-row { margin-bottom: 8px; }
-    .item-main {
-      display: grid;
-      grid-template-columns: 1fr 40px 80px;
-    }
-    .item-details { font-size: 8pt; color: #333 !important; }
-
-    .thermal-summary { margin-top: 10px; }
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 3px;
-    }
-    .summary-row.total {
-      font-weight: bold;
-      font-size: 12pt;
-      margin-top: 5px;
-    }
-
-    .thermal-footer {
-      text-align: center;
-      margin-top: 15px;
-      font-size: 8pt;
-    }
+  /* 6. A4 Optimization */
+  .receipt-a4 {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 15mm;
+    margin: 0 auto;
+    background: white;
   }
 }
+
+/* Screen Mode: Toggle visibility of format container */
+.receipt-container { display: none; }
+@media print { .receipt-container { display: block; } }
