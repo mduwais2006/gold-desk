@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const { db } = require('../config/firebase');
+const { getOtpEmailTemplate } = require('../utils/emailTemplates');
 
 const sendEmail = async (options) => {
     const transporter = nodemailer.createTransport({
@@ -12,10 +13,11 @@ const sendEmail = async (options) => {
     });
 
     const mailOptions = {
-        from: `Gold Desk <${process.env.EMAIL_FROM}>`,
+        from: `Gold Desk <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
         to: options.email,
         subject: options.subject,
         text: options.message,
+        html: options.html || null
     };
 
     try {
@@ -100,7 +102,8 @@ const requestCredentialChange = async (req, res) => {
             await sendEmail({
                 email: loginIdentifier,
                 subject: 'Gold Desk - Security OTP',
-                message: `Your OTP to change account credentials is ${generatedOtp}. It is valid for 5 minutes.`
+                message: `Your OTP to change account credentials is ${generatedOtp}. It is valid for 5 minutes.`,
+                html: getOtpEmailTemplate(generatedOtp, 'Security Update')
             });
             return res.json({ message: 'OTP sent via Email', loginIdentifier, authMethod: 'email' });
         } else {
@@ -259,7 +262,8 @@ const requestRecoveryEmailOtp = async (req, res) => {
         await sendEmail({
             email: cleanRecoveryEmail,
             subject: 'Gold Desk - Recovery Email Verification',
-            message: `Your OTP to verify this recovery email is ${generatedOtp}. It is valid for 2 minutes.`
+            message: `Your OTP to verify this recovery email is ${generatedOtp}. It is valid for 2 minutes.`,
+            html: getOtpEmailTemplate(generatedOtp, 'Recovery Email Verification')
         });
 
         res.json({ message: 'OTP sent to your recovery email' });

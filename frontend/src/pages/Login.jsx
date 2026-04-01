@@ -101,9 +101,10 @@ const Login = () => {
                         <label className="form-label small fw-semibold">Email or Phone Number</label>
                         <input
                             type="text"
-                            className="form-control w-100 form-control-glass"
+                            className="form-control w-100 form-control-glass theme-light"
                             placeholder="Email or +1 234 567 890"
                             {...register('loginIdentifier', { required: 'Email or Phone is required' })}
+                            autoComplete="username"
                         />
                         {errors.loginIdentifier && <span className="text-danger small mt-1 d-block">{errors.loginIdentifier.message}</span>}
                     </div>
@@ -116,6 +117,7 @@ const Login = () => {
                                 className="form-control w-100 form-control-glass with-toggle"
                                 placeholder="••••••••"
                                 {...register('password', { required: 'Password is required' })}
+                                autoComplete="current-password"
                             />
                             <span 
                                 className="password-toggle-icon" 

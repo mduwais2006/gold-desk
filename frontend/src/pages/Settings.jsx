@@ -89,7 +89,7 @@ const Settings = () => {
     const [printFormat, setPrintFormat] = useState(localStorage.getItem('printFormat') || 'a4');
 
     useEffect(() => {
-        if (activeTab === 'system') {
+        if (activeTab === 'machine') {
             fetchRecentDevices();
         }
     }, [activeTab]);
@@ -491,7 +491,7 @@ const Settings = () => {
 
                 {/* Tab Navigation */}
                 <div className="d-flex gap-2 mb-4 overflow-auto pb-2 noscroll">
-                    {['branding', 'billing', 'security', 'system'].map(tab => (
+                    {['branding', 'billing', 'security', 'machine', 'system'].map(tab => (
                         <motion.button
                             key={tab}
                             whileHover={{ scale: 1.05 }}
@@ -499,11 +499,11 @@ const Settings = () => {
                             onClick={() => setActiveTab(tab)}
                             className={`btn rounded-pill px-4 fw-bold text-nowrap transition-all ${activeTab === tab ? 'btn-gold shadow-sm' : 'btn-light border text-secondary'}`}
                         >
-                            {tab === 'branding' && 'Shop Logo & Name'}
-                            {tab === 'billing' && 'Billing & Payment'}
-                            {tab === 'security' && 'Account Security'}
-                            {tab === 'system' && 'Billing Machine & Time'}
-
+                            {tab === 'branding' && '🏠 Shop Logo & Name'}
+                            {tab === 'billing' && '💰 Payments & Taxes'}
+                            {tab === 'security' && '🔒 Login & Security'}
+                            {tab === 'machine' && '🖨️ Billing Machine'}
+                            {tab === 'system' && '⚙️ System Settings'}
                         </motion.button>
                     ))}
                 </div>
@@ -732,17 +732,16 @@ const Settings = () => {
                         </div>
                     )}
 
-                    {/* --- SYSTEM HUB TAB --- */}
-                    {activeTab === 'system' && (
+                    {/* --- MACHINE TAB (Hardware) --- */}
+                    {activeTab === 'machine' && (
                         <div className="col-12 animate-fade-in">
                             <div className="glass-panel p-4 border-0">
-                                <h5 className="fw-bold mb-4 border-bottom pb-2">System Hub (Billing Machine)</h5>
-
+                                <h5 className="fw-bold mb-4 border-bottom pb-2">Billing Machine (Hardware)</h5>
 
                                 <div className="row g-4">
-                                    <div className="col-xl-7">
+                                    <div className="col-12">
                                         <div className="p-3 border rounded mb-3 bg-light-subtle">
-                                            <h6 className="fw-bold mb-3">Thermal Billing Machine</h6>
+                                            <h6 className="fw-bold mb-3">Wireless Thermal Machine</h6>
 
                                             <div className="d-flex justify-content-between align-items-center mb-3">
                                                 <div className="small">
@@ -750,13 +749,12 @@ const Settings = () => {
                                                     <div className={`badge ${printerStatus === 'connected' ? 'bg-success' : 'bg-danger'} ms-2`}>{printerStatus.toUpperCase()}</div>
                                                 </div>
                                                 <button type="button" className="btn btn-sm btn-gold fw-bold px-3 shadow-sm" onClick={handlePrinterScan} disabled={isScanning}>
-                                                    {isScanning ? 'Connecting...' : 'Connect Wireless Machine'}
-
+                                                    {isScanning ? 'Connecting...' : 'Link Wireless Machine'}
                                                 </button>
                                             </div>
                                             <div className="mb-3">
                                                 <div className="d-flex justify-content-between align-items-center mb-1">
-                                                    <label className="form-label small text-secondary fw-semibold m-0">Saved Device</label>
+                                                    <label className="form-label small text-secondary fw-semibold m-0">Machine Alias (Name)</label>
                                                     {isPrinterActive && (
                                                         <button 
                                                             type="button" 
@@ -784,17 +782,17 @@ const Settings = () => {
                                                     localStorage.removeItem('posPrinterName');
                                                     setPrinterStatus('offline');
                                                     setPrinterName('No machine found');
-                                                    toast.info('Billing Machine removed.');
-                                                }}>Remove Billing Machine</button>
+                                                    toast.info('Machine disconnected.');
+                                                }}>Disconnect</button>
 
-                                                <button type="button" className="btn btn-sm btn-outline-secondary flex-grow-1 shadow-sm" onClick={handleTestPrint}>Test Print</button>
+                                                <button type="button" className="btn btn-sm btn-outline-secondary flex-grow-1 shadow-sm" onClick={handleTestPrint}>Print Test Page</button>
                                             </div>
                                         </div>
 
-                                        {/* Recently Paired List */}
+                                        {/* Authorized Printer Cache */}
                                         {recentDevices.length > 0 && (
-                                            <div className="p-3 border rounded mb-3 bg-white">
-                                                <h6 className="fw-bold mb-3 small text-secondary">Authorized Printer Cache</h6>
+                                            <div className="p-3 border rounded mb-3 bg-white shadow-sm">
+                                                <h6 className="fw-bold mb-3 small text-secondary">Recently Linked Machines</h6>
                                                 <div className="d-flex flex-column gap-2">
                                                     {recentDevices.map(device => (
                                                         <div key={device.id} className="d-flex justify-content-between align-items-center p-2 rounded bg-light border-0">
@@ -802,57 +800,81 @@ const Settings = () => {
                                                                 <span className="fs-5">🖨️</span>
                                                                 <div>
                                                                     <div className="fw-bold small">{device.name || 'Unknown Device'}</div>
-                                                                    <div className="text-secondary" style={{ fontSize: '0.6rem' }}>Hardware ID: {device.id.slice(0, 17)}...</div>
+                                                                    <div className="text-secondary" style={{ fontSize: '0.6rem' }}>HW ID: {device.id.slice(0, 17)}...</div>
                                                                 </div>
                                                             </div>
-                                                            <button 
-                                                                className="btn btn-sm btn-outline-dark fw-bold px-3 py-1"
-                                                                onClick={() => connectDeviceFinal(device)}
-                                                                style={{ fontSize: '0.7rem' }}
-                                                            >
-                                                                Instant Link
-                                                            </button>
+                                                            <button className="btn btn-sm btn-outline-dark fw-bold px-3 py-1" onClick={() => connectDeviceFinal(device)} style={{ fontSize: '0.7rem' }}>Quick Link</button>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
                                         )}
+                                    </div>
+                                    <div className="col-12">
+                                        <div className="p-3 border rounded-3 overflow-hidden">
+                                            <div className="d-flex align-items-center justify-content-between px-3 py-2" style={{ background: 'var(--accent-soft)', borderBottom: '1px solid var(--border-color)' }}>
+                                                <span className="small fw-bold" style={{ color: 'var(--accent-primary)' }}>🖨️ Support & Compatibility</span>
+                                            </div>
+                                            <div className="d-flex flex-column gap-0">
+                                                {[
+                                                    { icon: '🖥️', label: 'Wired USB Printer', desc: 'Standard driver install supported' },
+                                                    { icon: '📶', label: 'WiFi / Network Printer', desc: 'Automatic local network detection' },
+                                                    { icon: '📡', label: 'Bluetooth Thermal', desc: 'Secure wireless point-to-point' },
+                                                ].map((p, i) => (
+                                                    <div key={i} className="d-flex align-items-start gap-3 px-3 py-2" style={{ borderBottom: i < 2 ? '1px solid var(--border-color)' : 'none' }}>
+                                                        <span style={{ fontSize: '1.2rem' }}>{p.icon}</span>
+                                                        <div className="flex-grow-1">
+                                                            <p className="small fw-bold mb-0">{p.label}</p>
+                                                            <p className="small text-secondary mb-0" style={{ fontSize: '0.72rem' }}>{p.desc}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-                                        <div className="p-3 border rounded">
-                                            <h6 className="fw-bold mb-3">System Settings</h6>
-                                            <div className="row g-3">
-                                                <div className="col-md-4">
-                                                    <div className="form-check form-switch p-0 m-0 d-flex flex-column align-items-start">
-                                                        <label className="small fw-bold text-secondary mb-1">Dark Mode</label>
-                                                        <input className="form-check-input ms-0 fs-5" type="checkbox" checked={darkMode} onChange={toggleTheme} />
+                    {/* --- SYSTEM TAB (Apps & Preferences) --- */}
+                    {activeTab === 'system' && (
+                        <div className="col-12 animate-fade-in">
+                            <div className="glass-panel p-4 border-0">
+                                <h5 className="fw-bold mb-4 border-bottom pb-2">System Settings & Preferences</h5>
+                                
+                                <div className="row g-4">
+                                    <div className="col-md-6">
+                                        <div className="p-3 border rounded h-100 bg-light-subtle">
+                                            <h6 className="fw-bold mb-3">Display & Automation</h6>
+                                            <div className="d-flex flex-column gap-4">
+                                                <div className="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 className="mb-0 small fw-bold">Dark Mode Theme</h6>
+                                                        <p className="small text-secondary m-0">Invert colors for night use</p>
+                                                    </div>
+                                                    <div className="form-check form-switch fs-4">
+                                                        <input className="form-check-input" type="checkbox" checked={darkMode} onChange={toggleTheme} style={{ cursor: 'pointer' }} />
                                                     </div>
                                                 </div>
-                                                <div className="col-md-4">
-                                                    <div className="form-check form-switch p-0 m-0 d-flex flex-column align-items-start">
-                                                        <label className="small fw-bold text-secondary mb-1">Auto-Print</label>
-                                                        <input className="form-check-input ms-0 fs-5" type="checkbox" checked={autoPrintUpi} onChange={(e) => {
+
+                                                <div className="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 className="mb-0 small fw-bold">Auto-Print UPI Bills</h6>
+                                                        <p className="small text-secondary m-0">Print instantly on digital payment</p>
+                                                    </div>
+                                                    <div className="form-check form-switch fs-4">
+                                                        <input className="form-check-input" type="checkbox" checked={autoPrintUpi} onChange={(e) => {
                                                             setAutoPrintUpi(e.target.checked);
                                                             localStorage.setItem('autoPrintUpi', e.target.checked.toString());
-                                                        }} />
+                                                        }} style={{ cursor: 'pointer' }} />
                                                     </div>
                                                 </div>
-                                                <div className="col-md-4">
-                                                    <div className="form-check form-switch p-0 m-0 d-flex flex-column align-items-start">
-                                                        <label className="small fw-bold text-secondary mb-1">24H Format</label>
-                                                        <input className="form-check-input ms-0 fs-5" type="checkbox" checked={is24Hour} onChange={(e) => {
-                                                            setIs24Hour(e.target.checked);
-                                                            localStorage.setItem('timeFormat', e.target.checked ? '24h' : '12h');
-                                                            window.dispatchEvent(new Event('timeFormatChanged'));
-                                                        }} />
-                                                    </div>
-                                                </div>
-                                            </div>
 
-                                            {/* Print Format Settings */}
-                                            <hr className="my-3" />
-                                            <div className="d-flex flex-column gap-3">
+
+
                                                 <div>
-                                                    <label className="small fw-bold text-secondary mb-2 d-block">🖨️ Print Paper Format</label>
+                                                    <label className="small fw-bold text-secondary mb-2 d-block">🖨️ Preferred Print Format</label>
                                                     <div className="d-flex gap-2">
                                                         <button
                                                             type="button"
@@ -860,83 +882,46 @@ const Settings = () => {
                                                             onClick={() => {
                                                                 localStorage.setItem('printFormat', 'a4');
                                                                 setPrintFormat('a4');
-                                                                toast.success('Print format: A4 Invoice');
+                                                                toast.success('Format: A4');
                                                             }}
-                                                        >
-                                                            📄 A4 Invoice
-                                                        </button>
+                                                        >📄 A4 Full</button>
                                                         <button
                                                             type="button"
                                                             className={`btn btn-sm flex-grow-1 fw-bold ${printFormat === 'thermal' ? 'btn-gold' : 'btn-outline-secondary'}`}
                                                             onClick={() => {
                                                                 localStorage.setItem('printFormat', 'thermal');
                                                                 setPrintFormat('thermal');
-                                                                toast.success('Print format: Thermal (80mm)');
+                                                                toast.success('Format: Thermal');
                                                             }}
-                                                        >
-                                                            🧾 Thermal (80mm)
-                                                        </button>
-                                                    </div>
-                                                    <p className="small text-secondary mt-1 mb-0">
-                                                        {printFormat === 'thermal'
-                                                            ? '✅ Thermal mode: Narrow receipt format for 80mm rolls'
-                                                            : '✅ A4 mode: Full professional invoice layout'
-                                                        }
-                                                    </p>
-                                                </div>
-                                                <div className="border rounded-3 overflow-hidden">
-                                                    <div className="d-flex align-items-center justify-content-between px-3 py-2" style={{ background: 'var(--accent-soft)', borderBottom: '1px solid var(--border-color)' }}>
-                                                        <span className="small fw-bold" style={{ color: 'var(--accent-primary)' }}>🖨️ Supported Printers</span>
-                                                        <span className="badge rounded-pill" style={{ background: '#22c55e', fontSize: '0.65rem' }}>All Ready</span>
-                                                    </div>
-                                                    <div className="d-flex flex-column gap-0">
-                                                        {[
-                                                            { icon: '🖥️', label: 'Wired USB Printer', desc: 'Plug in USB cable → install driver → select in print dialog', badge: '✅ Supported' },
-                                                            { icon: '📶', label: 'WiFi / Network Printer', desc: 'Connect to same WiFi → OS detects automatically', badge: '✅ Supported' },
-                                                            { icon: '📡', label: 'Bluetooth Printer (Optional)', desc: 'Pair via OS settings → appears in print dialog', badge: '✅ Optional' },
-                                                        ].map((p, i) => (
-                                                            <div key={i} className="d-flex align-items-start gap-3 px-3 py-2" style={{ borderBottom: i < 2 ? '1px solid var(--border-color)' : 'none' }}>
-                                                                <span style={{ fontSize: '1.2rem', lineHeight: 1.4 }}>{p.icon}</span>
-                                                                <div className="flex-grow-1">
-                                                                    <p className="small fw-bold mb-0">{p.label} <span className="text-success" style={{ fontSize: '0.65rem' }}>{p.badge}</span></p>
-                                                                    <p className="small text-secondary mb-0" style={{ fontSize: '0.72rem' }}>{p.desc}</p>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    <div className="px-3 py-2" style={{ borderTop: '1px solid var(--border-color)', background: 'var(--bg-input)' }}>
-                                                        <p className="small text-secondary mb-2" style={{ fontSize: '0.72rem' }}>
-                                                            💡 <strong>How to use:</strong> Just click <em>Generate Bill</em> in Billing — the browser opens your OS print dialog automatically. Pick any installed printer.
-                                                        </p>
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-sm btn-gold w-100 fw-bold"
-                                                            onClick={() => {
-                                                                toast.info('Opening system print dialog — select any printer!', { autoClose: 2500 });
-                                                                setTimeout(() => window.print(), 600);
-                                                            }}
-                                                        >
-                                                            🖨️ Test All Printers (Open Print Dialog)
-                                                        </button>
+                                                        >🧾 Thermal</button>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="col-xl-5">
+                                    <div className="col-md-6">
                                         <div className="p-3 border rounded h-100 bg-light-subtle">
-                                            <h6 className="fw-bold mb-3">System Date & Time Setup</h6>
+                                            <h6 className="fw-bold mb-3">Global Date & Time Engine</h6>
                                             <div className="d-flex flex-column gap-3">
+                                                <div className="form-check form-switch mb-2">
+                                                    <input className="form-check-input" type="checkbox" checked={is24Hour} onChange={(e) => {
+                                                        setIs24Hour(e.target.checked);
+                                                        localStorage.setItem('timeFormat', e.target.checked ? '24h' : '12h');
+                                                        window.dispatchEvent(new Event('timeFormatChanged'));
+                                                    }} />
+                                                    <label className="small fw-bold">Use 24-Hour Clock</label>
+                                                </div>
+
                                                 <div className="d-flex flex-column gap-1">
-                                                    <label className="small fw-bold text-secondary">Active Calendar Date</label>
+                                                    <label className="small fw-bold text-secondary">System Calendar Date</label>
                                                     <div className="d-flex gap-2">
                                                         <input type="date" className="form-control form-control-sm" value={manualDate} onChange={e => setManualDate(e.target.value)} />
-                                                        <button className="btn btn-sm btn-gold fw-bold px-3" onClick={handleApplyDate}>Apply Date</button>
+                                                        <button className="btn btn-sm btn-gold fw-bold px-3" onClick={handleApplyDate}>Apply</button>
                                                     </div>
                                                 </div>
                                                 <div className="d-flex flex-column gap-1">
-                                                    <label className="small fw-bold text-secondary">Active Clock Time</label>
+                                                    <label className="small fw-bold text-secondary">System Clock Time</label>
                                                     <div className="d-flex gap-1 align-items-center">
                                                         <select className="form-select form-select-sm" value={manualHour} onChange={e => setManualHour(e.target.value)}>
                                                             {Array.from({ length: is24Hour ? 24 : 12 }, (_, i) => String(is24Hour ? i : (i === 0 ? 12 : i)).padStart(2, '0')).map(h => <option key={h} value={h}>{h}</option>)}
@@ -950,10 +935,10 @@ const Settings = () => {
                                                                 <option value="AM">AM</option><option value="PM">PM</option>
                                                             </select>
                                                         )}
-                                                        <button className="btn btn-sm btn-gold fw-bold px-3 ms-auto" onClick={handleApplyTime}>Apply Time</button>
+                                                        <button className="btn btn-sm btn-gold fw-bold px-3 ms-auto" onClick={handleApplyTime}>Set</button>
                                                     </div>
                                                 </div>
-                                                <button className="btn btn-sm btn-outline-danger w-100 mt-2 fw-bold" onClick={handleResetAll}>🔄 Reset Everything To Live</button>
+                                                <button className="btn btn-sm btn-outline-danger w-100 mt-2 fw-bold" onClick={handleResetAll}>🔄 Force Sync to Live Time</button>
                                             </div>
                                         </div>
                                     </div>
@@ -1018,7 +1003,7 @@ const Settings = () => {
                                             <div className="alert alert-info py-2 small mb-0">Fill in one or both of the fields below.</div>
                                             <div>
                                                 <label className="form-label small fw-semibold">New Username (Email / Mobile)</label>
-                                                <input type="text" placeholder="Leave empty to keep current" className="form-control form-control-glass" value={credentialData.newLoginIdentifier} onChange={e => setCredentialData({ ...credentialData, newLoginIdentifier: e.target.value })} />
+                                                <input type="text" placeholder="Leave empty to keep current" className="form-control form-control-glass" value={credentialData.newLoginIdentifier} onChange={e => setCredentialData({ ...credentialData, newLoginIdentifier: e.target.value })} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'username'} />
                                             </div>
                                             <div>
                                                 <label className="form-label small fw-semibold">New Password</label>
@@ -1029,6 +1014,7 @@ const Settings = () => {
                                                         className="form-control form-control-glass with-toggle" 
                                                         value={credentialData.newPassword} 
                                                         onChange={e => setCredentialData({ ...credentialData, newPassword: e.target.value })} 
+                                                        autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'new-password'}
                                                     />
                                                     <span 
                                                         className="password-toggle-icon" 
@@ -1053,6 +1039,7 @@ const Settings = () => {
                                                         className="form-control form-control-glass with-toggle" 
                                                         value={credentialData.confirmPassword} 
                                                         onChange={e => setCredentialData({ ...credentialData, confirmPassword: e.target.value })} 
+                                                        autoComplete="new-password"
                                                     />
                                                     <span 
                                                         className="password-toggle-icon" 
@@ -1070,7 +1057,7 @@ const Settings = () => {
 
                                             <div>
                                                 <label className="form-label small fw-semibold">6-Digit Security OTP</label>
-                                                <input type="text" maxLength="6" className="form-control form-control-glass text-center tracking-widest fw-bold" placeholder="------" style={{ letterSpacing: '0.5em' }} value={credentialData.otp} onChange={e => setCredentialData({ ...credentialData, otp: e.target.value })} />
+                                                <input type="text" maxLength="6" className="form-control form-control-glass text-center tracking-widest fw-bold" placeholder="------" style={{ letterSpacing: '0.5em' }} value={credentialData.otp} onChange={e => setCredentialData({ ...credentialData, otp: e.target.value })} autoComplete="one-time-code" />
                                             </div>
                                             <button className="btn-gold w-100 mt-2" onClick={handleCredentialVerify} disabled={isLoading || credentialData.otp.length !== 6}>
                                                 {isLoading ? 'Verifying...' : 'Verify & Change'}

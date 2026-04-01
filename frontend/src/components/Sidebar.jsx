@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAppTime } from '../utils/timeUtils';
+import { motion } from 'framer-motion';
+import api from '../utils/api';
 
 const Icons = {
     Dashboard: () => <svg fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor" width="22" height="22"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>,
@@ -27,11 +29,25 @@ const Sidebar = () => {
         const handleFormatChange = () => setCurrentTime(getAppTime());
         window.addEventListener('timeFormatChanged', handleFormatChange);
         
+        // WARM CACHE: Pre-fetch reports in background for instant transition
+        const prefetchReports = async () => {
+             try {
+                 const res = await api.get('/data-entry');
+                 localStorage.setItem('cachedReports', JSON.stringify(res.data.slice(0, 50)));
+                 // Also cache unique customer list for instant suggestions in billing
+                 const uniqueCusts = Array.from(new Set(res.data.map(r => JSON.stringify({ name: r.customerName, mobile: r.mobile }))))
+                                         .map(s => JSON.parse(s))
+                                         .filter(c => c.name && c.mobile);
+                 localStorage.setItem('cachedCustomers', JSON.stringify(uniqueCusts.slice(0, 100)));
+             } catch (e) {}
+        };
+        if (user) prefetchReports();
+
         return () => {
             clearInterval(timer);
             window.removeEventListener('timeFormatChanged', handleFormatChange);
         };
-    }, []);
+    }, [user]);
 
     const handleLogout = () => {
         logout();
@@ -107,44 +123,79 @@ const Sidebar = () => {
                 <div>
                     <div className="mb-5 text-center px-3">
                         {/* Premium Brand Header */}
-                        <div className="brand-box mb-4">
+                        <div className="brand-box glass-panel p-3 border-0 shadow-lg rounded-4 border-start border-4 border-warning mb-4 mx-2">
                             <h3 className="fw-900 mb-0" style={{ 
                                 color: 'var(--accent-primary)', 
-                                fontSize: '1.4rem', 
-                                letterSpacing: '3px', 
-                                textTransform: 'uppercase',
-                                padding: '1rem 0 0.5rem 0'
+                                fontSize: '1.2rem', 
+                                letterSpacing: '2px', 
+                                textTransform: 'uppercase'
                             }}>
                                 {user?.shopName || 'GOLD DATA ENTRY'}
                             </h3>
-                            <div className="small opacity-75 fw-bold mt-1" style={{ letterSpacing: '0.5px', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                            <div className="small opacity-75 fw-bold mt-1" style={{ letterSpacing: '0.5px', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
                                 {user?.shopAddress || "PREMIUM JEWELRY DESK"}
                             </div>
                         </div>
                     </div>
 
-                    <div className="mb-5 p-3 mx-3 rounded glass-panel text-center border-0 shadow-sm animate-fade-in d-none d-lg-block" style={{ background: 'rgba(212, 175, 55, 0.05)' }}>
-
-                        <div className="fw-bold small text-warning mb-1">{formatDate(currentTime)}</div>
-                        <div className="fs-5 fw-bold font-monospace" style={{ letterSpacing: '1px' }}>{formatTime(currentTime)}</div>
+                    <div className="mb-5 p-3 mx-3 rounded-4 glass-panel text-center border-0 shadow-lg border-start border-4 border-warning d-none d-lg-block" style={{ background: 'rgba(212, 175, 55, 0.08)', backdropFilter: 'blur(10px)' }}>
+                        <div className="fw-bold fs-6 text-warning mb-1" style={{ letterSpacing: '1px' }}>{formatDate(currentTime)}</div>
+                        <div className="d-flex justify-content-center align-items-baseline gap-1 font-monospace" style={{ color: 'var(--text-primary)' }}>
+                            <motion.div 
+                                className="fs-4 fw-900" 
+                                initial={{ opacity: 0.8 }} 
+                                animate={{ opacity: 1 }} 
+                                style={{ textShadow: '0 0 15px rgba(212, 175, 55, 0.3)' }}
+                            >
+                                {formatTime(currentTime).split(' ')[0].split(':')[0]}
+                            </motion.div>
+                            <motion.div 
+                                className="fs-4 fw-900 mx-1"
+                                animate={{ opacity: [1, 0, 1] }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            >
+                                :
+                            </motion.div>
+                            <motion.div className="fs-4 fw-900">
+                                {formatTime(currentTime).split(' ')[0].split(':')[1]}
+                            </motion.div>
+                            <motion.div 
+                                className="fs-4 fw-900 mx-1"
+                                animate={{ opacity: [1, 0, 1] }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            >
+                                :
+                            </motion.div>
+                            <motion.div 
+                                key={formatTime(currentTime).split(' ')[0].split(':')[2]}
+                                initial={{ y: -5, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                className="fs-4 fw-900 text-warning"
+                            >
+                                {formatTime(currentTime).split(' ')[0].split(':')[2]}
+                            </motion.div>
+                            <div className="small fw-bold ms-2 opacity-75" style={{ fontSize: '0.7rem' }}>
+                                {formatTime(currentTime).split(' ')[1]}
+                            </div>
+                        </div>
                     </div>
 
                     <nav className="nav flex-column gap-3 mt-4">
 
-                        <NavLink to="/" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
+                        <NavLink to="/" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded-4 d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 mb-1 ${isActive ? 'bg-warning text-dark shadow-lg border-start border-4 border-dark' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
                             <Icons.Dashboard /> <span className="nav-text">Dashboard</span>
                         </NavLink>
-                        <NavLink to="/billing" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
+                        <NavLink to="/billing" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded-4 d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 mb-1 ${isActive ? 'bg-warning text-dark shadow-lg border-start border-4 border-dark' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
                             <Icons.Billing /> <span className="nav-text">Billing / Invoice</span>
                         </NavLink>
 
-                        <NavLink to="/data-entry" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
+                        <NavLink to="/data-entry" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded-4 d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 mb-1 ${isActive ? 'bg-warning text-dark shadow-lg border-start border-4 border-dark' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
                             <Icons.DataEntry /> <span className="nav-text">Data & Reports</span>
                         </NavLink>
-                        <NavLink to="/about" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
+                        <NavLink to="/about" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded-4 d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 mb-1 ${isActive ? 'bg-warning text-dark shadow-lg border-start border-4 border-dark' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px' }}>
                             <Icons.About /> <span className="nav-text">Help & About</span>
                         </NavLink>
-                        <NavLink to="/settings" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-sm' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px', marginBottom: '1rem' }}>
+                        <NavLink to="/settings" onClick={() => setIsOpen(false)} className={({ isActive }) => `nav-link rounded-4 d-flex align-items-center gap-3 px-3 py-3 font-monospace fw-semibold fs-6 ${isActive ? 'bg-warning text-dark shadow-lg border-start border-4 border-dark' : 'text-secondary hover-accent'}`} style={{ letterSpacing: '0.3px', marginBottom: '1rem' }}>
                             <Icons.Settings /> <span className="nav-text">Settings</span>
                         </NavLink>
                     </nav>
@@ -152,7 +203,7 @@ const Sidebar = () => {
                 </div>
 
                 <div className="mt-auto" style={{ marginBottom: '3rem' }}>
-                    <div className="p-3 rounded glass-panel mb-3 text-center border-0 d-none d-lg-block">
+                    <div className="p-3 mx-2 rounded-4 glass-panel mb-3 text-center border-0 shadow-lg border-start border-4 border-warning d-none d-lg-block">
                         <p className="mb-1 fw-bold small text-truncate">{user?.name}</p>
                         <p className="mb-0 text-secondary" style={{ fontSize: '0.7rem' }}>{user?.email}</p>
                     </div>

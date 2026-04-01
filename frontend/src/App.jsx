@@ -53,7 +53,7 @@ function AppRoutes() {
     return (
         <AnimatePresence mode="wait">
             <Suspense fallback={<PageLoader />}>
-                <Routes location={location} key={location.pathname}>
+                <Routes location={location}>
                     <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
                     <Route path="/register" element={<PageWrapper><Signup /></PageWrapper>} />
                     <Route path="/verify-otp" element={<PageWrapper><VerifyOTP /></PageWrapper>} />

@@ -11,6 +11,7 @@ import { usePrinter } from '../context/PrinterContext';
 import { getAppTime } from '../utils/timeUtils';
 import LoadingSequence from '../components/LoadingSequence';
 import Receipt from '../components/Receipt';
+import Swal from 'sweetalert2';
 
 
 const getCurrentDateTimeLocal = () => {
@@ -25,22 +26,31 @@ const DataEntry = () => {
     const location = useLocation();
     const { connectedDevice, setConnectedDevice, isPrinterActive, setIsPrinterActive, reconnectDevice } = usePrinter();
     const [activeTab, setActiveTab] = useState('entry'); // 'entry' or 'reports'
-    const [isLoading, setIsLoading] = useState(false);
+    const formRef = React.useRef(null);
+
+    // Automatic smooth scroll to form on entry
+    useEffect(() => {
+        if (activeTab === 'entry' && formRef.current) {
+            formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [activeTab]);
+    const [isReportsLoading, setIsReportsLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [deleteTargetId, setDeleteTargetId] = useState(null);
     const [printData, setPrintData] = useState(null);
 
     // Calculator / Entry State
     const [formData, setFormData] = useState({
         date: getCurrentDateTimeLocal(),
-        billNumber: '',
+        billNumber: location?.state?.billNumber || '',
         customerName: location?.state?.customerName || '',
         mobile: location?.state?.mobile || '',
         itemType: 'Gold',
         itemName: 'Chain',
         grams: '',
         ratePerGram: '',
-        negotiableAmount: '0',
-        gstPercentage: user?.gstEnabled ? (user?.gstPercentage || 3) : 0,
+        negotiableAmount: '',
+        gstPercentage: user?.gstEnabled ? (user?.gstPercentage || 3) : '',
         customItemName: ''
     });
 
@@ -86,6 +96,21 @@ const DataEntry = () => {
 
     // Reports & Filtering State
     const [reports, setReports] = useState([]);
+    const [suggestions, setSuggestions] = useState([]);
+    const [activeSuggestionField, setActiveSuggestionField] = useState(null);
+
+    const uniqueCustomers = useMemo(() => {
+        const map = new Map();
+        reports.forEach(r => {
+            if (r.customerName && r.mobile && !map.has(r.mobile)) {
+                map.set(r.mobile, { name: r.customerName, mobile: r.mobile });
+            }
+        });
+        const arr = Array.from(map.values());
+        localStorage.setItem('cachedCustomers', JSON.stringify(arr));
+        return arr;
+    }, [reports]);
+
     const [filters, setFilters] = useState({
         searchDate: '',
         searchTime: '',
@@ -96,26 +121,41 @@ const DataEntry = () => {
 
 
     useEffect(() => {
+        // Fast parallel fetch to prevent UI blocking
+        if (!formData.billNumber) fetchNextBillNumber();
+        
+        // Instant Load: Load from cache first if available
+        const cached = localStorage.getItem('cachedReports');
+        if (cached) {
+            try {
+                setReports(JSON.parse(cached));
+            } catch (e) {}
+        }
+        
         fetchReports();
     }, []);
 
-    const fetchReports = async () => {
+    const fetchNextBillNumber = async () => {
         try {
-            setIsLoading(true);
+            const res = await api.get('/data-entry/next-bill');
+            setFormData(prev => ({ ...prev, billNumber: res.data.billNumber }));
+        } catch (error) {
+            console.error('Failed to quick-fetch next bill number');
+        }
+    };
+
+    const fetchReports = async (silent = true) => {
+        try {
+            setIsReportsLoading(true);
             const res = await api.get('/data-entry');
             setReports(res.data);
-            
-            // Auto-suggest next bill number
-            if (user?.shopName) {
-                const shopInitial = user.shopName.charAt(0).toUpperCase();
-                const yearYY = new Date().getFullYear().toString().slice(-2);
-                const nextCount = res.data.length + 1;
-                setFormData(prev => ({ ...prev, billNumber: `${shopInitial}${yearYY}${String(nextCount).padStart(2, '0')}` }));
-            }
+            // Update cache (limit to 50 for speed)
+            localStorage.setItem('cachedReports', JSON.stringify(res.data.slice(0, 50)));
         } catch (error) {
-            toast.error('Failed to fetch reports');
+            console.error('Failed to fetch reports:', error);
+            if (!silent) toast.error('Failed to fetch reports');
         } finally {
-            setIsLoading(false);
+            setIsReportsLoading(false);
         }
     };
 
@@ -134,12 +174,31 @@ const DataEntry = () => {
         } else {
             setFormData({ ...formData, [name]: value });
         }
+
+        // Custom Autocomplete Engine
+        if (localStorage.getItem('disableAutocomplete') === 'true') {
+            setSuggestions([]);
+            return;
+        }
+
+        if (name === 'customerName' && value.length > 0) {
+            const matches = uniqueCustomers.filter(c => c.name.toLowerCase().includes(value.toLowerCase())).slice(0, 5);
+            setSuggestions(matches);
+            setActiveSuggestionField('customerName');
+        } else if (name === 'mobile' && value.length > 2) {
+            const matches = uniqueCustomers.filter(c => c.mobile.includes(value)).slice(0, 5);
+            setSuggestions(matches);
+            setActiveSuggestionField('mobile');
+        } else if (name === 'customerName' || name === 'mobile') {
+            setSuggestions([]);
+            setActiveSuggestionField(null);
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            setIsLoading(true);
+            setIsSaving(true);
             const finalItemName = formData.itemName === 'Other' && formData.customItemName ? formData.customItemName : formData.itemName;
 
             const payload = {
@@ -180,44 +239,44 @@ const DataEntry = () => {
             // localStorage.removeItem('billingFormDraft'); 
             
             setFormData(prev => {
-                const shopInitial = user?.shopName?.charAt(0).toUpperCase() || 'G';
-                const yearYY = new Date().getFullYear().toString().slice(-2);
-                const nextCount = reports.length + 2; // +1 for the one we just added, +1 for next
                 return {
                     ...prev,
                     date: getCurrentDateTimeLocal(),
-                    billNumber: `${shopInitial}${yearYY}${String(nextCount).padStart(2, '0')}`,
+                    // Keep billNumber, customerName, and mobile for potential multi-item bill
                     itemType: 'Gold',
                     itemName: 'Chain',
                     grams: '',
                     ratePerGram: '',
-                    negotiableAmount: '0',
-                    gstPercentage: user?.gstEnabled ? (user?.gstPercentage || 3) : 0,
+                    negotiableAmount: '',
+                    gstPercentage: user?.gstEnabled ? (user?.gstPercentage || 3) : '',
                     customItemName: ''
                 };
             });
         } catch (error) {
             toast.error('Failed to save entry');
         } finally {
-            setIsLoading(false);
+            setIsSaving(false);
         }
     };
 
     const handleClearForm = () => {
         setFormData({
             date: getCurrentDateTimeLocal(),
+            billNumber: '', 
             customerName: '',
             mobile: '',
             itemType: 'Gold',
             itemName: 'Chain',
             grams: '',
             ratePerGram: '',
-            negotiableAmount: '0',
-            gstPercentage: user?.gstEnabled ? (user?.gstPercentage || 3) : 0,
+            negotiableAmount: '',
+            gstPercentage: user?.gstEnabled ? (user?.gstPercentage || 3) : '',
             customItemName: ''
         });
+        fetchNextBillNumber(); // Refresh for the next session
         localStorage.removeItem('billingFormDraft');
         localStorage.removeItem('pendingBillingItems');
+        localStorage.removeItem('pendingCustomerDetails');
         toast.info('Form cleared and session wiped');
     };
 
@@ -259,10 +318,40 @@ const DataEntry = () => {
                 ? `for ${new Date(0, filters.searchMonth - 1).toLocaleString('default', { month: 'long' })} (all years)`
                 : `for all months in ${filters.searchYear}`;
 
-        if (!window.confirm(`⚠️ CRITICAL ACTION: Are you sure you want to PERMANENTLY DELETE ALL records ${dateDesc}? This cannot be undone.`)) return;
+        // Verify if there are actually any records to delete
+        const targetRecords = reports.filter(r => {
+            const dateObj = new Date(r.date);
+            const mMatch = !filters.searchMonth || (dateObj.getMonth() + 1).toString().padStart(2, '0') === filters.searchMonth;
+            const yMatch = !filters.searchYear || dateObj.getFullYear().toString() === filters.searchYear;
+            return mMatch && yMatch;
+        });
+
+        if (targetRecords.length === 0) {
+            return Swal.fire({
+                title: 'No Records to Delete',
+                text: `There are zero records ${dateDesc}.`,
+                icon: 'info',
+                confirmButtonColor: 'var(--accent-primary)',
+                backdrop: `rgba(0,0,0,0.6)`
+            });
+        }
+
+        const result = await Swal.fire({
+            title: 'Delete All Records?',
+            html: `Are you sure you want to <b>PERMANENTLY DELETE ALL</b> records ${dateDesc}?<br><br><span class="text-danger small">This action cannot be undone.</span>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Delete All',
+            cancelButtonText: 'Cancel',
+            backdrop: `rgba(0,0,0,0.6)`
+        });
+
+        if (!result.isConfirmed) return;
 
         try {
-            setIsLoading(true);
+            setIsSaving(true);
             const res = await api.post('/data-entry/bulk-delete', {
                 month: filters.searchMonth,
                 year: filters.searchYear
@@ -272,7 +361,7 @@ const DataEntry = () => {
         } catch (error) {
             toast.error(error.response?.data?.message || 'Bulk delete failed');
         } finally {
-            setIsLoading(false);
+            setIsSaving(false);
         }
     };
     
@@ -407,7 +496,7 @@ const DataEntry = () => {
     const confirmDeleteEntry = async () => {
         if (!deleteTargetId) return;
         try {
-            setIsLoading(true);
+            setIsSaving(true);
             await api.delete(`/data-entry/${deleteTargetId}`);
             setReports(reports.filter(r => r.id !== deleteTargetId));
             toast.success('Data deleted permanently. 🗑️');
@@ -415,7 +504,7 @@ const DataEntry = () => {
             console.error(error);
             toast.error('Failed to securely delete this data.');
         } finally {
-            setIsLoading(false);
+            setIsSaving(false);
             setDeleteTargetId(null);
         }
     };
@@ -439,7 +528,7 @@ const DataEntry = () => {
             <Sidebar />
             <div className="main-content flex-grow-1">
                 <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h2 className="fw-bold m-0 animate-fade-in shadow-sm-text">Data Entry & Calculator</h2>
+                    <h2 className="fw-bold m-0 animate-fade-in shadow-sm-text">Data Entry</h2>
                     <div className="btn-group shadow-sm rounded-3">
                         <button
                             className={`btn ${activeTab === 'entry' ? 'btn-gold' : 'btn-light border text-secondary'}`}
@@ -462,12 +551,13 @@ const DataEntry = () => {
                     {activeTab === 'entry' && (
                         <motion.div
                             key="entry"
-                            initial={{ opacity: 0, scale: 0.98 }}
+                            initial={{ opacity: 0, scale: 0.99 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.98 }}
+                            exit={{ opacity: 0, scale: 0.99 }}
+                            transition={{ duration: 0.2 }}
                             className="row justify-content-center px-2"
                         >
-                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+                            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                             {/* Policy Banner */}
                             <div className="alert alert-info border-0 shadow-sm d-flex align-items-center gap-3 mb-4 rounded-4 py-3" style={{ background: 'rgba(13, 110, 253, 0.1)', color: 'var(--text-primary)', borderLeft: '5px solid #0d6efd !important' }}>
                                 <div className="fs-3">💡</div>
@@ -481,7 +571,7 @@ const DataEntry = () => {
                             </div>
                             </motion.div>
 
-                            <div className="col-xl-8 col-lg-10 animate-fade-in text-start">
+                            <div className="col-xl-8 col-lg-10 animate-fade-in text-start" ref={formRef}>
                                     <motion.div 
                                         initial={{ opacity: 0, y: -10 }} 
                                         animate={{ opacity: 1, y: 0 }}
@@ -494,26 +584,62 @@ const DataEntry = () => {
                                 <div className="glass-panel p-4 border-0 mb-4 shadow-lg">
                                      <h5 className="fw-bold mb-4 border-bottom pb-2 d-flex align-items-center gap-2">
                                         <span className="bg-warning-subtle p-2 rounded-3 text-warning fs-6">💎</span>
-                                        Jewelry Quick Entry & Calculator
+                                        Data Entry
                                     </h5>
 
                                     <form onSubmit={handleSubmit}>
                                         <div className="row g-4">
-                                            <div className="col-md-4">
+                                            <div className="col-md-4 position-relative">
                                                 <label className="form-label small fw-bold text-secondary">Customer Name <span className="text-muted fw-normal">(Optional)</span></label>
-                                                <input type="text" name="customerName" value={formData.customerName} onChange={handleInputChange} className="form-control form-control-glass" placeholder="John Doe" />
+                                                <input type="text" name="customerName" value={formData.customerName} onChange={handleInputChange} onFocus={() => setActiveSuggestionField('customerName')} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} className="form-control form-control-glass" placeholder="John Doe" autoComplete="name" />
+                                                
+                                                {/* Beautiful Suggestion Dropdown */}
+                                                {activeSuggestionField === 'customerName' && suggestions.length > 0 && (
+                                                    <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="position-absolute w-100 mt-1 shadow-lg border rounded-3 overflow-hidden bg-white" style={{ zIndex: 1050, top: '100%', left: 0 }}>
+                                                        <div className="d-flex justify-content-between px-3 py-2 bg-light border-bottom">
+                                                            <span className="small fw-bold text-secondary">Past Customers</span>
+                                                            <button type="button" className="btn btn-sm btn-link text-danger p-0 fw-bold border-0 text-decoration-none" onMouseDown={(e) => { e.preventDefault(); setSuggestions([]); setActiveSuggestionField(null); }}>✕ Cancel</button>
+                                                        </div>
+                                                        <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                                                            {suggestions.map((s, i) => (
+                                                                <div key={i} className="px-3 py-2 border-bottom hover-bg-light" style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => { setFormData(prev => ({ ...prev, customerName: s.name, mobile: s.mobile })); setSuggestions([]); }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                                                    <div className="fw-bold text-dark">{s.name}</div>
+                                                                    <div className="small text-secondary fw-semibold">📱 {s.mobile}</div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </motion.div>
+                                                )}
                                             </div>
-                                            <div className="col-md-4">
+                                            <div className="col-md-4 position-relative">
                                                 <label className="form-label small fw-bold text-secondary">Mobile <span className="text-muted fw-normal">(Optional)</span></label>
-                                                <input type="tel" name="mobile" value={formData.mobile} onChange={handleInputChange} className="form-control form-control-glass" placeholder="+91" />
+                                                <input type="tel" name="mobile" value={formData.mobile} onChange={handleInputChange} onFocus={() => setActiveSuggestionField('mobile')} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} className="form-control form-control-glass" placeholder="+91" autoComplete="tel" />
+                                                
+                                                {/* Beautiful Suggestion Dropdown */}
+                                                {activeSuggestionField === 'mobile' && suggestions.length > 0 && (
+                                                    <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="position-absolute w-100 mt-1 shadow-lg border rounded-3 overflow-hidden bg-white" style={{ zIndex: 1050, top: '100%', left: 0 }}>
+                                                        <div className="d-flex justify-content-between px-3 py-2 bg-light border-bottom">
+                                                            <span className="small fw-bold text-secondary">Past Customers</span>
+                                                            <button type="button" className="btn btn-sm btn-link text-danger p-0 fw-bold border-0 text-decoration-none" onMouseDown={(e) => { e.preventDefault(); setSuggestions([]); setActiveSuggestionField(null); }}>✕ Cancel</button>
+                                                        </div>
+                                                        <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                                                            {suggestions.map((s, i) => (
+                                                                <div key={i} className="px-3 py-2 border-bottom hover-bg-light" style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => { setFormData(prev => ({ ...prev, customerName: s.name, mobile: s.mobile })); setSuggestions([]); }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                                                    <div className="fw-bold text-dark">{s.mobile}</div>
+                                                                    <div className="small text-secondary fw-semibold">👤 {s.name}</div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </motion.div>
+                                                )}
                                             </div>
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">Transaction Date & Time</label>
-                                                <input type="datetime-local" step="1" name="date" value={formData.date} onChange={handleInputChange} className="form-control form-control-glass" required />
+                                                <input type="datetime-local" step="1" name="date" value={formData.date} onChange={handleInputChange} className="form-control form-control-glass" required autoComplete="on" />
                                             </div>
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">Bill Number</label>
-                                                <input type="text" name="billNumber" value={formData.billNumber} onChange={handleInputChange} className="form-control form-control-glass fw-bold text-primary" placeholder="e.g. G26101" required />
+                                                <input type="text" name="billNumber" value={formData.billNumber} onChange={handleInputChange} className="form-control form-control-glass fw-bold text-primary" placeholder="e.g. G26101" required autoComplete="off" />
                                             </div>
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">Item Type</label>
@@ -544,7 +670,7 @@ const DataEntry = () => {
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">Weight (Grams)</label>
                                                 <div className="input-group">
-                                                    <input type="number" step="0.001" name="grams" value={formData.grams} onChange={handleInputChange} className="form-control form-control-glass" placeholder="0.000" required />
+                                                    <input type="number" step="0.001" name="grams" value={formData.grams} onChange={handleInputChange} className="form-control form-control-glass" placeholder="0.000" required autoComplete="on" />
                                                     <span className="input-group-text border-0 small">g</span>
                                                 </div>
                                             </div>
@@ -552,21 +678,21 @@ const DataEntry = () => {
                                                 <label className="form-label small fw-bold text-secondary">Rate per Gram</label>
                                                 <div className="input-group">
                                                     <span className="input-group-text border-0 small">₹</span>
-                                                    <input type="number" name="ratePerGram" value={formData.ratePerGram} onChange={handleInputChange} className="form-control form-control-glass" placeholder="0" required />
+                                                    <input type="number" name="ratePerGram" value={formData.ratePerGram} onChange={handleInputChange} className="form-control form-control-glass" placeholder="0" required autoComplete="on" />
                                                 </div>
                                             </div>
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">Negotiable (Discount)</label>
                                                 <div className="input-group">
                                                     <span className="input-group-text border-0 small">₹</span>
-                                                    <input type="number" name="negotiableAmount" value={formData.negotiableAmount} onChange={handleInputChange} className="form-control form-control-glass text-danger fw-bold" placeholder="0" />
+                                                    <input type="number" name="negotiableAmount" value={formData.negotiableAmount} onChange={handleInputChange} className="form-control form-control-glass text-danger fw-bold" placeholder="0" autoComplete="on" />
                                                 </div>
                                             </div>
 
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">GST Percentage (%)</label>
                                                 <div className="input-group">
-                                                    <input type="number" name="gstPercentage" value={formData.gstPercentage} onChange={handleInputChange} className="form-control form-control-glass fw-bold text-primary" placeholder="0" />
+                                                    <input type="number" name="gstPercentage" value={formData.gstPercentage} onChange={handleInputChange} className="form-control form-control-glass fw-bold text-primary" placeholder="0" autoComplete="on" />
                                                     <span className="input-group-text border-0 small">%</span>
                                                 </div>
                                             </div>
@@ -589,8 +715,8 @@ const DataEntry = () => {
                                             </div>
 
                                             <div className="col-12 d-flex gap-3 mt-4 flex-wrap">
-                                                <button type="submit" className="btn btn-advanced flex-grow-1 py-3" disabled={isLoading}>
-                                                    {isLoading ? 'Saving...' : '💾 Save Entry to Reports'}
+                                                <button type="submit" className="btn btn-advanced flex-grow-1 py-3" disabled={isSaving}>
+                                                    {isSaving ? 'Saving...' : '💾 Save Entry to Reports'}
                                                 </button>
                                                 <button type="button" onClick={handleClearForm} className="btn btn-outline-danger py-3 px-4 rounded-pill d-flex align-items-center gap-2">
                                                     🧹 Clear All
@@ -612,12 +738,12 @@ const DataEntry = () => {
                                                         localStorage.setItem('pendingBillingItems', JSON.stringify(pendingItems));
                                                     }
                                                     
-                                                    if (formData.customerName || formData.mobile) {
-                                                        localStorage.setItem('pendingCustomerDetails', JSON.stringify({
-                                                            customerName: formData.customerName,
-                                                            mobile: formData.mobile
-                                                        }));
-                                                    }
+                                                    // Push the *actual* current bill number (the one saved or currently being edited)
+                                                    localStorage.setItem('pendingCustomerDetails', JSON.stringify({
+                                                        customerName: formData.customerName,
+                                                        mobile: formData.mobile,
+                                                        billNumber: formData.billNumber
+                                                    }));
 
                                                     navigate('/billing');
                                                 }} className="btn btn-dark py-3 fw-bold px-4 rounded-pill shadow-sm d-flex align-items-center gap-2">
@@ -653,7 +779,7 @@ const DataEntry = () => {
                                     {/* Filter Grid */}
                                     <div className="p-3 rounded-4 mb-4" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
                                         <div className="row g-3 align-items-end">
-                                            <div className="col-6 col-md-3">
+                                            <div className="col-12 col-md-6 col-lg-3">
                                                 <label className="form-label small fw-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
                                                     📅 Exact Date
                                                 </label>
@@ -665,7 +791,7 @@ const DataEntry = () => {
                                                 />
                                             </div>
 
-                                            <div className="col-6 col-md-3">
+                                            <div className="col-12 col-md-6 col-lg-2">
                                                 <label className="form-label small fw-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
                                                     🕒 Filter by Time
                                                 </label>
@@ -679,7 +805,7 @@ const DataEntry = () => {
                                                 />
                                             </div>
 
-                                            <div className="col-6 col-md-2">
+                                            <div className="col-6 col-md-6 col-lg-2">
                                                 <label className="form-label small fw-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
                                                     🗓️ Month
                                                 </label>
@@ -693,7 +819,7 @@ const DataEntry = () => {
                                                 </select>
                                             </div>
 
-                                            <div className="col-6 col-md-2">
+                                            <div className="col-6 col-md-6 col-lg-2">
                                                 <label className="form-label small fw-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
                                                     📆 Year
                                                 </label>
@@ -706,20 +832,20 @@ const DataEntry = () => {
                                                 </select>
                                             </div>
 
-                                            <div className="col-12 col-md-2 d-flex gap-2">
+                                            <div className="col-12 col-md-12 col-lg-3 d-flex flex-column flex-sm-row gap-2 mt-3 mt-lg-0">
                                                 <button
-                                                    className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold px-2"
+                                                    className="btn btn-outline-danger flex-grow-1 d-flex align-items-center justify-content-center fw-bold py-2 shadow-sm"
                                                     onClick={() => setFilters({ searchDate: '', searchTime: '', searchMonth: '', searchYear: currentYear.toString(), searchQuery: '' })}
                                                     title="Reset All Filters"
                                                 >
                                                     Reset
                                                 </button>
                                                 <button
-                                                    className="btn btn-danger w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold px-2"
+                                                    className="btn btn-danger flex-grow-1 d-flex align-items-center justify-content-center gap-2 fw-bold py-2 shadow-sm"
                                                     onClick={handleBulkDelete}
                                                     title="Bulk Delete entries for selected month"
                                                 >
-                                                    🗑️ Bulk
+                                                    🗑️  Delete All
                                                 </button>
                                             </div>
                                         </div>
@@ -744,7 +870,7 @@ const DataEntry = () => {
                                                 </div>
                                                 <input 
                                                     type="text" 
-                                                    className="form-control form-control-advanced flex-grow-1" 
+                                                    className="form-control form-control-advanced flex-grow-1 search-input-white-placeholder" 
                                                     placeholder="Search by Name, Mobile or Bill #..." 
                                                     value={filters.searchQuery}
                                                     onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
@@ -756,9 +882,20 @@ const DataEntry = () => {
                                                         fontSize: '1.05rem',
                                                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                                         boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-                                                        transform: 'translateZ(0)' // Hardware acceleration
+                                                        transform: 'translateZ(0)', // Hardware acceleration
+                                                        color: 'inherit'
                                                     }}
                                                 />
+                                                <style>{`
+                                                    .search-input-white-placeholder::placeholder {
+                                                        color: rgba(255, 255, 255, 0.85) !important;
+                                                        opacity: 1 !important;
+                                                    }
+                                                    [data-theme="light"] .search-input-white-placeholder::placeholder {
+                                                        color: #000000 !important;
+                                                        opacity: 0.6 !important;
+                                                    }
+                                                `}</style>
                                             </div>
                                         </div>
 
@@ -817,7 +954,7 @@ const DataEntry = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {isLoading ? (
+                                        {isReportsLoading ? (
                                             <tr><td colSpan="9" className="text-center py-5">
                                                 <LoadingSequence text="Fetching Historical Records..." />
                                             </td></tr>
@@ -935,8 +1072,8 @@ const DataEntry = () => {
                                 </div>
                                 <div className="modal-footer border-0 p-3 bg-light d-flex justify-content-center gap-3">
                                     <button type="button" className="btn btn-secondary px-4 py-2 rounded-pill shadow-sm" onClick={() => setDeleteTargetId(null)}>Cancel & Keep It</button>
-                                    <button type="button" className="btn btn-danger px-4 py-2 rounded-pill shadow-sm fw-bold d-flex align-items-center gap-2" onClick={confirmDeleteEntry} disabled={isLoading}>
-                                        {isLoading ? <span className="spinner-border spinner-border-sm"></span> : 'Yes, Delete Permanently'}
+                                    <button type="button" className="btn btn-danger px-4 py-2 rounded-pill shadow-sm fw-bold d-flex align-items-center gap-2" onClick={confirmDeleteEntry} disabled={isSaving}>
+                                        {isSaving ? <span className="spinner-border spinner-border-sm"></span> : 'Yes, Delete Permanently'}
                                     </button>
                                 </div>
                             </div>

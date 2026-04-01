@@ -3,6 +3,8 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const compression = require('compression');
 const { securityMiddleware } = require('./middleware/securityMiddleware');
+const http = require('http');
+const { Server } = require('socket.io');
 
 // Initialize Firebase
 require('./config/firebase');
@@ -10,6 +12,24 @@ require('./config/firebase');
 dotenv.config();
 
 const app = express();
+const httpServer = http.createServer(app);
+
+const io = new Server(httpServer, {
+    cors: {
+        origin: [
+            'http://localhost:5173', 
+            'http://localhost:5174', 
+            'http://localhost:3000',
+            process.env.FRONTEND_URL
+        ],
+        methods: ["GET", "POST"]
+    }
+});
+
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+});
 
 app.use(compression());
 app.use(express.json());
@@ -49,12 +69,16 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/export', require('./routes/exportRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
+app.use('/api/webhook', require('./routes/webhookRoutes'));
 
 const path = require('path');
 
 // ... rest of imports ...
 
 const basePort = process.env.PORT || 5000;
+
+const { initCronJobs } = require('./cron/monthlyReportJob');
+initCronJobs();
 
 // Serve Static Frontend Files
 const frontendBuildPath = path.join(__dirname, '../frontend/dist');
@@ -70,7 +94,7 @@ app.get('*', (req, res) => {
 });
 
 const startServer = (port) => {
-    const server = app.listen(port, () => {
+    const server = httpServer.listen(port, () => {
         console.log(`\n\x1b[42m\x1b[30m ✔ GOLD DESK API IS LIVE \x1b[0m`);
         console.log(`\x1b[36mPort: ${port} | Mode: ${process.env.NODE_ENV}\x1b[0m\n`);
     });

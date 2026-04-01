@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getDataEntries, createDataEntry, deleteDataEntry, bulkDeleteDataEntries } = require('../controllers/dataEntryController');
+const { getDataEntries, createDataEntry, deleteDataEntry, bulkDeleteDataEntries, getNextBillNumber } = require('../controllers/dataEntryController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.route('/')
@@ -9,6 +9,9 @@ router.route('/')
 
 router.route('/bulk-delete')
     .post(protect, bulkDeleteDataEntries);
+
+router.route('/next-bill')
+    .get(protect, getNextBillNumber);
 
 router.route('/:id')
     .delete(protect, deleteDataEntry);

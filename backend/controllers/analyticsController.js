@@ -32,11 +32,15 @@ const getDashboardAnalytics = async (req, res) => {
             console.error("Count aggregation failed, falling back to 0:", countErr.message);
         }
 
-        // Fetch documents - removing the strict 'date' filter to avoid Index Missing errors for now
-        // This ensures the dashboard ALWAYS works while we investigate individual user index needs
+        // Fetch documents - optimized to only fetch data from the last 2 months for dashboard stats
         const [subSnapshot, rootSnapshot] = await Promise.all([
-            db.collection('users').doc(userId).collection('dataEntries').get(),
-            db.collection('dataEntries').where('userId', '==', userId).get()
+            db.collection('users').doc(userId).collection('dataEntries')
+              .where('date', '>=', startOfLastMonth)
+              .get(),
+            db.collection('dataEntries')
+              .where('userId', '==', userId)
+              .where('date', '>=', startOfLastMonth)
+              .get()
         ]);
 
         let stats = { 

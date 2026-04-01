@@ -7,16 +7,23 @@ const getDataEntries = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        // HYBRID FETCH: Check both new sub-collection and old root collection for backward compatibility
+        // HIGH-SPEED DATA ENGINE: Limit to most recent 500 records and order on server
         const [subSnapshot, rootSnapshot] = await Promise.all([
-            db.collection('users').doc(userId).collection('dataEntries').get(),
-            db.collection('dataEntries').where('userId', '==', userId).get()
+            db.collection('users').doc(userId).collection('dataEntries')
+              .orderBy('date', 'desc')
+              .limit(500)
+              .get(),
+            db.collection('dataEntries')
+              .where('userId', '==', userId)
+              .orderBy('date', 'desc')
+              .limit(100)
+              .get()
         ]);
 
         let entries = [];
         subSnapshot.forEach(doc => entries.push({ id: doc.id, ...doc.data() }));
         
-        // Add root items only if they don't already exist in sub-collection (avoid duplicates if partially migrated)
+        // Add root items only if they don't already exist (backward compatibility check)
         const subIds = new Set(entries.map(e => e.id));
         rootSnapshot.forEach(doc => {
             if (!subIds.has(doc.id)) {
@@ -24,9 +31,7 @@ const getDataEntries = async (req, res) => {
             }
         });
 
-        // Sort manually by date descending
-        entries.sort((a, b) => new Date(b.date) - new Date(a.date));
-
+        // No intensive sort needed; server already returned them mostly ordered
         res.status(200).json(entries);
     } catch (error) {
         console.error('Error fetching data entries:', error);
@@ -60,8 +65,8 @@ const createDataEntry = async (req, res) => {
         const shopInitial = (userData?.shopName || 'G').charAt(0).toUpperCase();
         const yearYY = new Date().getFullYear().toString().slice(-2);
 
-        const entrySnapshot = await db.collection('users').doc(userId).collection('dataEntries').get();
-        const entryCount = entrySnapshot.size + 1;
+        const entrySnapshot = await db.collection('users').doc(userId).collection('dataEntries').count().get();
+        const entryCount = entrySnapshot.data().count + 1;
         const billNumber = req.body.billNumber || `${shopInitial}${yearYY}${String(entryCount).padStart(2, '0')}`;
 
         const newEntry = {
@@ -166,9 +171,58 @@ const bulkDeleteDataEntries = async (req, res) => {
     }
 };
 
+// @desc    Get next bill number fast
+// @route   GET /api/data-entry/next-bill
+// @access  Private
+const getNextBillNumber = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const userDoc = await db.collection('users').doc(userId).get();
+        const shopInitial = (userDoc.data()?.shopName || 'G').charAt(0).toUpperCase();
+        const yearYY = new Date().getFullYear().toString().slice(-2);
+        const billPrefix = `${shopInitial}${yearYY}`;
+        
+        // Fetch the most recent entry with the current prefix to find the sequence
+        const latestSnapshot = await db.collection('users').doc(userId).collection('dataEntries')
+            .orderBy('createdAt', 'desc')
+            .limit(1)
+            .get();
+
+        let nextNum = 1;
+        if (!latestSnapshot.empty) {
+            let lastBill = latestSnapshot.docs[0].data().billNumber || '';
+            const doubleYear = `${yearYY}${yearYY}`;
+            
+            // Self-Healing Logic: Strip repeating years from corrupted historical data
+            // e.g. "A26262606" -> "A2606"
+            while (lastBill.length > (shopInitial.length + yearYY.length * 2) && 
+                   lastBill.slice(shopInitial.length).startsWith(doubleYear)) {
+                lastBill = shopInitial + lastBill.slice(shopInitial.length + yearYY.length);
+            }
+            
+            // If the latest bill belongs to the current year prefix, increment only the order part
+            if (lastBill.startsWith(billPrefix)) {
+                // Remove prefix and parse the remaining numeric part
+                const orderPart = lastBill.slice(billPrefix.length);
+                const currentOrder = parseInt(orderPart, 10);
+                if (!isNaN(currentOrder)) nextNum = currentOrder + 1;
+            }
+        }
+        
+        // Return the strictly formatted bill number: ShopInitial + YearYY + SuffixOrder
+        const billNumber = `${billPrefix}${String(nextNum).padStart(2, '0')}`;
+        
+        res.status(200).json({ billNumber });
+    } catch (error) {
+        console.error('Error fetching next bill:', error);
+        res.status(500).json({ message: 'Failed to fetch next bill' });
+    }
+};
+
 module.exports = {
     getDataEntries,
     createDataEntry,
     deleteDataEntry,
-    bulkDeleteDataEntries
+    bulkDeleteDataEntries,
+    getNextBillNumber
 };

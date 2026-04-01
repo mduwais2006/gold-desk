@@ -10,7 +10,9 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { usePrinter } from '../context/PrinterContext';
 import Receipt from '../components/Receipt';
+import { io } from 'socket.io-client';
 
+const socket = io('http://localhost:5001');
 
 const Billing = () => {
     const { user } = useAuth();
@@ -44,6 +46,7 @@ const Billing = () => {
     const watchGst = watch('gst');
     const watchCustomerName = watch('customerName');
     const watchMobile = watch('mobile');
+    const watchBillNumber = watch('billNumber');
 
     // Auto-Calculator & Live GST Dispatcher
     useEffect(() => {
@@ -73,6 +76,25 @@ const Billing = () => {
     }, [watch, setValue]);
 
     const [submittedItems, setSubmittedItems] = useState([]);
+
+    // Custom Autocomplete Engine (Sources from DataEntry cache)
+    const [suggestions, setSuggestions] = useState([]);
+    const [activeSuggestionField, setActiveSuggestionField] = useState(null);
+    const uniqueCustomers = useMemo(() => JSON.parse(localStorage.getItem('cachedCustomers') || '[]'), []);
+
+    useEffect(() => {
+        if (localStorage.getItem('disableAutocomplete') === 'true') {
+            setSuggestions([]); 
+            return;
+        }
+        if (activeSuggestionField === 'customerName' && watchCustomerName?.length > 0) {
+            setSuggestions(uniqueCustomers.filter(c => c.name && c.name.toLowerCase().includes(watchCustomerName.toLowerCase())).slice(0, 5));
+        } else if (activeSuggestionField === 'mobile' && watchMobile?.length > 2) {
+            setSuggestions(uniqueCustomers.filter(c => c.mobile && c.mobile.includes(watchMobile)).slice(0, 5));
+        } else if (activeSuggestionField) {
+            setSuggestions([]);
+        }
+    }, [watchCustomerName, watchMobile, activeSuggestionField, uniqueCustomers]);
 
     const handleCalculateTotals = () => {
         let totalGstAmt = 0;
@@ -216,25 +238,7 @@ const Billing = () => {
                 console.error('Failed to parse pending customer details', e);
             }
         }
-
-        // Auto-suggest next bill number (only if not already provided from Data Entry)
-        const fetchNextBillNumber = async () => {
-            if (watch('billNumber')) return; // Guard: Don't overwrite existing sync
-
-            try {
-                const res = await api.get('/bills');
-                if (user?.shopName) {
-                    const shopInitial = user.shopName.charAt(0).toUpperCase();
-                    const yearYY = new Date().getFullYear().toString().slice(-2);
-                    const nextCount = res.data.length + 1;
-                    setValue('billNumber', `${shopInitial}${yearYY}${String(nextCount).padStart(2, '0')}`);
-                }
-            } catch (error) {
-                console.error('Failed to fetch bill count', error);
-            }
-        };
-        fetchNextBillNumber();
-    }, [setValue, user, watch]);
+    }, [setValue]);
 
     // Ensure GST is auto-filled once user profile loads (if not already set by draft)
     useEffect(() => {
@@ -248,9 +252,10 @@ const Billing = () => {
         // No local state syncing needed as we use context
     }, []);
 
-    // Automotive Auto-Bill Generator engine (Simulates physical SoundBox hardware/Webhook)
+    // Automated Auto-Bill Generator engine via Socket.io Webhooks
     useEffect(() => {
-        let timer = null;
+        let isMounted = true;
+        
         if (
             paymentMode === 'upi' &&
             autoPrintUpi &&
@@ -262,17 +267,24 @@ const Billing = () => {
             !isSaving
         ) {
             setIsSensing(true);
-            timer = setTimeout(() => {
+            
+            // Listen for genuine webhook
+            socket.on('payment-received', (paymentData) => {
+                if (!isMounted) return;
+                console.log("UPI Event Caught:", paymentData);
                 toast.success('🔊 Webhook Synced: Payment Received from UPI Machine! Printing bill...');
                 handleSubmit(onSubmit)();
                 setIsSensing(false);
-            }, 6000); // Emulates waiting for external physical machine
+            });
+            
         } else {
             setIsSensing(false);
+            socket.off('payment-received');
         }
 
         return () => {
-            if (timer) clearTimeout(timer);
+            isMounted = false;
+            socket.off('payment-received');
         };
     }, [paymentMode, finalTotal, calculatedItems, watchCustomerName, watchMobile, isSaving, handleSubmit]);
 
@@ -301,7 +313,9 @@ const Billing = () => {
                 }
             };
 
-            await api.post('/bills', payload);
+            const res = await api.post('/bills', payload);
+            const generatedBillId = res.data.id;
+            const generatedBillNum = res.data.billNumber;
 
             // ----------------------------------------------------
             // HARDWARE PRINT ENGINE (PHYSICAL BLUETOOTH RECEIPT)
@@ -336,15 +350,21 @@ const Billing = () => {
             // ----------------------------------------------------
             // BROWSER PRINT ENGINE (RESPONSIVE HTML)
             // ----------------------------------------------------
-            setPrintData({ ...payload, billNumber: res.data.billNumber, gstPercentage: parseFloat(data.gst) || 0 });
-            setTimeout(() => {
-                window.print();
-            }, 500);
+            // Only use Browser print preview if Hardware Printing was bypassed or failed.
+            if (!printedOnHardware) {
+                setPrintData({ ...payload, billNumber: generatedBillNum, gstPercentage: parseFloat(data.gst) || 0 });
+                setTimeout(() => {
+                    window.print();
+                }, 500);
+            }
+
+            // Execute delayed Inventory Deduction confirm check
+            await api.post(`/bills/${generatedBillId}/confirm-print`);
 
             if (printedOnHardware) {
-                toast.success(`Bill ${res.data.billNumber} Generated & Printed! 📠`);
+                toast.success(`Bill ${generatedBillNum} Generated & Printed via Web Bluetooth! 📠`);
             } else {
-                toast.success(`Bill ${res.data.billNumber} Saved Successfully! 📑`);
+                toast.success(`Bill ${generatedBillNum} Saved Successfully! 📑`);
             }
             // Comprehensive Cleanup and Reset
             // Comprehensive Cleanup and Reset
@@ -386,8 +406,7 @@ const Billing = () => {
                 <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
                     <div className="d-flex align-items-center gap-3">
                         <div>
-                            <h2 className="fw-bold m-0">Premium Checkout</h2>
-                            <p className="text-secondary small m-0">Generate professional tax invoices instantly</p>
+                            <h2 className="fw-bold m-0">Invoice & Billing</h2>
                         </div>
                         <button 
                             type="button" 
@@ -403,28 +422,65 @@ const Billing = () => {
 
                 <div className="row g-4 mb-5">
                     <div className="col-12">
-                        <form id="billingForm" onSubmit={handleSubmit(onSubmit)}>
+                        <form id="billingForm" onSubmit={handleSubmit(onSubmit)} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'off' : 'on'}>
                             {/* Customer Details */}
                             <motion.div
-                                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }}
-                                className="glass-panel p-4 border-0 mb-4 shadow-sm"
+                                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}
+                                className="glass-panel p-4 border-0 mb-4 shadow-lg"
+                                style={{ borderRadius: '24px' }}
                             >
                                 <div className="d-flex align-items-center gap-2 mb-4">
                                     <div className="bg-warning-subtle p-2 rounded-3 text-warning">👤</div>
                                     <h5 className="fw-bold m-0 text-high-contrast">Customer Information</h5>
                                 </div>
                                 <div className="row g-3">
-                                    <div className="col-md-4">
+                                    <div className="col-md-4 position-relative">
                                         <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Customer Name</label>
-                                        <input type="text" className="form-control form-control-glass bg-light" placeholder="Enter Full Name" {...register('customerName', { required: true })} />
+                                        <input type="text" className="form-control form-control-glass bg-light" placeholder="Enter Full Name" {...register('customerName', { required: true })} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'name'} onFocus={() => setActiveSuggestionField('customerName')} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} />
+                                        
+                                        {/* Beautiful Suggestion Dropdown */}
+                                        {activeSuggestionField === 'customerName' && suggestions.length > 0 && (
+                                            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="position-absolute w-100 mt-1 shadow-lg border rounded-3 overflow-hidden bg-white" style={{ zIndex: 1050, top: '100%', left: 0 }}>
+                                                <div className="d-flex justify-content-between px-3 py-2 bg-light border-bottom">
+                                                    <span className="small fw-bold text-secondary">Past Customers</span>
+                                                    <button type="button" className="btn btn-sm btn-link text-danger p-0 fw-bold border-0 text-decoration-none" onMouseDown={(e) => { e.preventDefault(); setActiveSuggestionField(null); setSuggestions([]); }}>✕ Cancel</button>
+                                                </div>
+                                                <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                                                    {suggestions.map((s, i) => (
+                                                        <div key={i} className="px-3 py-2 border-bottom hover-bg-light" style={{ cursor: 'pointer', transition: 'background 0.2s' }} onMouseDown={(e) => { e.preventDefault(); setValue('customerName', s.name); setValue('mobile', s.mobile); setActiveSuggestionField(null); }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                                            <div className="fw-bold text-dark">{s.name}</div>
+                                                            <div className="small text-secondary fw-semibold">📱 {s.mobile}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        )}
                                     </div>
-                                    <div className="col-md-4">
+                                    <div className="col-md-4 position-relative">
                                         <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Mobile Number</label>
-                                        <input type="tel" className="form-control form-control-glass bg-light" placeholder="+91" {...register('mobile', { required: true })} />
+                                        <input type="tel" className="form-control form-control-glass bg-light" placeholder="+91" {...register('mobile', { required: true })} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'tel'} onFocus={() => setActiveSuggestionField('mobile')} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} />
+                                        
+                                        {/* Beautiful Suggestion Dropdown */}
+                                        {activeSuggestionField === 'mobile' && suggestions.length > 0 && (
+                                            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="position-absolute w-100 mt-1 shadow-lg border rounded-3 overflow-hidden bg-white" style={{ zIndex: 1050, top: '100%', left: 0 }}>
+                                                <div className="d-flex justify-content-between px-3 py-2 bg-light border-bottom">
+                                                    <span className="small fw-bold text-secondary">Past Customers</span>
+                                                    <button type="button" className="btn btn-sm btn-link text-danger p-0 fw-bold border-0 text-decoration-none" onMouseDown={(e) => { e.preventDefault(); setActiveSuggestionField(null); setSuggestions([]); }}>✕ Cancel</button>
+                                                </div>
+                                                <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                                                    {suggestions.map((s, i) => (
+                                                        <div key={i} className="px-3 py-2 border-bottom hover-bg-light" style={{ cursor: 'pointer', transition: 'background 0.2s' }} onMouseDown={(e) => { e.preventDefault(); setValue('customerName', s.name); setValue('mobile', s.mobile); setActiveSuggestionField(null); }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                                            <div className="fw-bold text-dark">{s.mobile}</div>
+                                                            <div className="small text-secondary fw-semibold">👤 {s.name}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        )}
                                     </div>
                                     <div className="col-md-4">
                                         <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Bill Number</label>
-                                        <input type="text" className="form-control form-control-glass bg-light fw-bold text-primary" placeholder="G26101" {...register('billNumber', { required: true })} />
+                                        <input type="text" className="form-control form-control-glass bg-light fw-bold text-primary" placeholder="G26101" {...register('billNumber', { required: true })} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'off'} />
                                     </div>
                                 </div>
                             </motion.div>
@@ -432,8 +488,9 @@ const Billing = () => {
 
                             {/* Cart Items */}
                             <motion.div
-                                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-                                className="glass-panel p-4 border-0 shadow-sm"
+                                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}
+                                className="glass-panel p-4 border-0 shadow-lg"
+                                style={{ borderRadius: '24px' }}
                             >
                                 <div className="d-flex justify-content-between align-items-center mb-4">
                                     <div className="d-flex align-items-center gap-2">
@@ -449,7 +506,7 @@ const Billing = () => {
                                         <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button" className="btn btn-sm btn-dark px-3 rounded-pill shadow-sm" onClick={() => append({ itemName: '', weight: '', ratePerGram: '', price: '', gst: user?.gstPercentage || 3 })}>
                                             ➕ Quick Add (Here)
                                         </motion.button>
-                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button" className="btn btn-sm btn-gold px-3 rounded-pill shadow-sm opacity-90" onClick={() => navigate('/data-entry', { state: { customerName: watchCustomerName, mobile: watchMobile } })}>
+                                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button" className="btn btn-sm btn-gold px-3 rounded-pill shadow-sm opacity-90" onClick={() => navigate('/data-entry', { state: { customerName: watchCustomerName, mobile: watchMobile, billNumber: watchBillNumber } })}>
                                             🧮 Add Another Entry
                                         </motion.button>
                                     </div>
@@ -524,7 +581,7 @@ const Billing = () => {
 
                     <div className="col-12" ref={summaryRef}>
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}
+                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}
                             className="glass-panel p-4 border-0 shadow-lg mt-2"
                             style={{ borderRadius: '24px' }}
                         >
@@ -561,7 +618,7 @@ const Billing = () => {
                                             [Apply to All]
                                         </button>
                                     </div>
-                                    <input type="number" className="form-control form-control-sm text-end fw-bold bg-white text-primary" style={{ width: '60px' }} {...register('gst')} />
+                                    <input type="number" className="form-control form-control-sm text-end fw-bold bg-white text-primary" style={{ width: '60px' }} {...register('gst')} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'on'} />
                                 </div>
 
                                 <div className="d-flex justify-content-between mb-4 align-items-center border-bottom pb-3">
@@ -572,7 +629,7 @@ const Billing = () => {
 
                                 <div className="d-flex justify-content-between align-items-center mb-2">
                                     <span className="text-danger fw-semibold">Discount</span>
-                                    <input type="number" className="form-control form-control-sm text-end fw-bold border-danger-subtle text-danger bg-danger-subtle" style={{ width: '90px' }} {...register('discount')} />
+                                    <input type="number" className="form-control form-control-sm text-end fw-bold border-danger-subtle text-danger bg-danger-subtle" style={{ width: '90px' }} {...register('discount')} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'on'} />
                                 </div>
                             </div>
 

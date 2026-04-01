@@ -68,21 +68,7 @@ const createBill = async (req, res) => {
 
         const newBill = await db.collection('users').doc(userId).collection('bills').add(billData);
 
-        // Deduct inventory items that were billed
-        const batch = db.batch();
-        const inventoryRef = db.collection('inventory');
-
-        for (const billedItem of items) {
-            if (billedItem.inventoryId) {
-                const itemDocRef = inventoryRef.doc(billedItem.inventoryId);
-                const itemSnap = await itemDocRef.get();
-                if (itemSnap.exists) {
-                    batch.delete(itemDocRef);
-                }
-            }
-        }
-        await batch.commit();
-
+        // Note: Inventory deduction is deferred until hardware print is confirmed.
         res.status(201).json({ id: newBill.id, billNumber, customerName, finalTotal });
     } catch (error) {
         console.error("Billing Error", error);
@@ -130,8 +116,55 @@ const getAnalytics = async (req, res) => {
     }
 };
 
+// @desc    Confirm Print and Deduct Inventory
+// @route   POST /api/bills/:id/confirm-print
+// @access  Private
+const confirmPrint = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const billId = req.params.id;
+
+        const billRef = db.collection('users').doc(userId).collection('bills').doc(billId);
+        const billDoc = await billRef.get();
+
+        if (!billDoc.exists) {
+            return res.status(404).json({ message: 'Bill not found' });
+        }
+
+        const billData = billDoc.data();
+        if (billData.inventoryDeducted) {
+            return res.status(200).json({ message: 'Inventory already deducted' });
+        }
+
+        const items = billData.items || [];
+        const batch = db.batch();
+        const inventoryRef = db.collection('inventory');
+
+        for (const billedItem of items) {
+            if (billedItem.inventoryId) {
+                const itemDocRef = inventoryRef.doc(billedItem.inventoryId);
+                const itemSnap = await itemDocRef.get();
+                if (itemSnap.exists) {
+                    batch.delete(itemDocRef);
+                }
+            }
+        }
+
+        // Mark as deducted
+        batch.update(billRef, { inventoryDeducted: true });
+        
+        await batch.commit();
+
+        res.status(200).json({ message: 'Inventory deducted successfully' });
+    } catch (error) {
+        console.error("Confirm Print Error", error);
+        res.status(500).json({ message: 'Error confirming print' });
+    }
+};
+
 module.exports = {
     getBills,
     createBill,
-    getAnalytics
+    getAnalytics,
+    confirmPrint
 };

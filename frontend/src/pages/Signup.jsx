@@ -6,9 +6,10 @@ import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 
 const Signup = () => {
-    const { register, handleSubmit, formState: { errors } } = useForm();
+    const { register, handleSubmit, watch, formState: { errors } } = useForm();
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const { register: registerUser } = useAuth();
     const navigate = useNavigate();
 
@@ -84,6 +85,7 @@ const Signup = () => {
                                 className="form-control w-100 form-control-glass"
                                 placeholder="+1 234 567 890"
                                 {...register('phone', { required: 'Phone number is required' })}
+                                autoComplete="tel"
                             />
                             {errors.phone && <span className="text-danger small mt-1 d-block">{errors.phone.message}</span>}
                         </div>
@@ -96,6 +98,7 @@ const Signup = () => {
                             className="form-control w-100 form-control-glass"
                             placeholder="Golden Jewellers Ltd."
                             {...register('shopName')}
+                            autoComplete="organization"
                         />
                     </div>
 
@@ -103,9 +106,10 @@ const Signup = () => {
                         <label className="form-label small fw-semibold">Email Address</label>
                         <input
                             type="email"
-                            className="form-control w-100 form-control-glass"
+                            className="form-control w-100 form-control-glass theme-light"
                             placeholder="vendor@golddesk.com"
                             {...register('email', { required: 'Email is required' })}
+                            autoComplete="email"
                         />
                         {errors.email && <span className="text-danger small mt-1 d-block">{errors.email.message}</span>}
                     </div>
@@ -118,6 +122,7 @@ const Signup = () => {
                                 className="form-control w-100 form-control-glass with-toggle"
                                 placeholder="••••••••"
                                 {...register('password', { required: 'Password is required', minLength: { value: 6, message: 'Min 6 chars' } })}
+                                autoComplete="new-password"
                             />
                             <span 
                                 className="password-toggle-icon" 
