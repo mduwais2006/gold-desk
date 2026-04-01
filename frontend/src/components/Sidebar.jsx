@@ -141,35 +141,18 @@ const Sidebar = () => {
                     <div className="mb-5 p-3 mx-3 rounded-4 glass-panel text-center border-0 shadow-lg border-start border-4 border-warning d-none d-lg-block" style={{ background: 'rgba(212, 175, 55, 0.08)', backdropFilter: 'blur(10px)' }}>
                         <div className="fw-bold fs-6 text-warning mb-1" style={{ letterSpacing: '1px' }}>{formatDate(currentTime)}</div>
                         <div className="d-flex justify-content-center align-items-baseline gap-1 font-monospace" style={{ color: 'var(--text-primary)' }}>
-                            <motion.div 
-                                className="fs-4 fw-900" 
-                                initial={{ opacity: 0.8 }} 
-                                animate={{ opacity: 1 }} 
-                                style={{ textShadow: '0 0 15px rgba(212, 175, 55, 0.3)' }}
-                            >
+                            <div className="fs-4 fw-900" style={{ textShadow: '0 0 15px rgba(212, 175, 55, 0.3)' }}>
                                 {formatTime(currentTime).split(' ')[0].split(':')[0]}
-                            </motion.div>
-                            <motion.div 
-                                className="fs-4 fw-900 mx-1"
-                                animate={{ opacity: [1, 0, 1] }}
-                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                            >
-                                :
-                            </motion.div>
-                            <motion.div className="fs-4 fw-900">
+                            </div>
+                            <div className="fs-4 fw-900 mx-1 animate-pulse" style={{ opacity: 0.8 }}>:</div>
+                            <div className="fs-4 fw-900">
                                 {formatTime(currentTime).split(' ')[0].split(':')[1]}
-                            </motion.div>
-                            <motion.div 
-                                className="fs-4 fw-900 mx-1"
-                                animate={{ opacity: [1, 0, 1] }}
-                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                            >
-                                :
-                            </motion.div>
+                            </div>
+                            <div className="fs-4 fw-900 mx-1 animate-pulse" style={{ opacity: 0.8 }}>:</div>
                             <motion.div 
                                 key={formatTime(currentTime).split(' ')[0].split(':')[2]}
-                                initial={{ y: -5, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
+                                initial={{ opacity: 0.5 }}
+                                animate={{ opacity: 1 }}
                                 className="fs-4 fw-900 text-warning"
                             >
                                 {formatTime(currentTime).split(' ')[0].split(':')[2]}

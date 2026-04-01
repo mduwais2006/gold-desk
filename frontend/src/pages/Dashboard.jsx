@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAnalyticsData } from '../redux/analyticsSlice';
 import LoadingSequence from '../components/LoadingSequence';
+import { motion } from 'framer-motion';
 
 const Dashboard = () => {
     const dispatch = useDispatch();
@@ -13,8 +14,19 @@ const Dashboard = () => {
         dispatch(fetchAnalyticsData());
     }, [dispatch]);
 
-    const StatCard = React.memo(({ title, value, icon, colorClass, subtitle }) => (
-        <div className="stat-card glass-panel border-0 h-100 p-4">
+    const StatCard = React.memo(({ title, value, icon, colorClass, subtitle, delay = 0 }) => (
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: delay }}
+            whileHover={{ y: -5, scale: 1.02, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
+            whileTap={{ scale: 0.98 }}
+            className="stat-card glass-panel border-0 h-100 p-4 shadow-lg rounded-4 overflow-hidden" 
+            style={{ 
+                borderLeft: '5px solid var(--accent-primary)',
+                background: 'var(--bg-secondary)'
+            }}
+        >
             <div className={`stat-icon mb-3 ${colorClass || ''}`} style={{ fontSize: '2rem' }}>{icon}</div>
             <div className="stat-title mb-1" style={{ fontSize: '0.85rem', fontWeight: 700, opacity: 0.7, textTransform: 'uppercase', letterSpacing: '1px' }}>{title}</div>
             <div className="stat-value h2 fw-bold text-high-contrast mb-0">{value}</div>
@@ -23,7 +35,7 @@ const Dashboard = () => {
                     {subtitle}
                 </div>
             )}
-        </div>
+        </motion.div>
     ));
     StatCard.displayName = 'StatCard';
 
@@ -59,18 +71,20 @@ const Dashboard = () => {
                     <LoadingSequence text="Fetching Analytics..." />
                 ) : (
                     <>
-                        <div className="stat-grid mb-5 animate-fade-in">
+                        <div className="stat-grid mb-5">
                             <StatCard 
                                 title="Today's Entry Value" 
                                 value={`₹ ${stats?.todayRevenue?.toLocaleString('en-IN') || '0'}`} 
                                 icon="📈" 
                                 colorClass="text-success" 
+                                delay={0.1}
                             />
                             <StatCard 
                                 title="Total Entries (All Time)" 
                                 value={stats?.totalEntries?.toLocaleString('en-IN') || '0'} 
                                 icon="📝" 
                                 colorClass="text-info bg-info bg-opacity-10" 
+                                delay={0.2}
                             />
                             <StatCard 
                                 title={`Customers (${compareMonths?.current})`} 
@@ -78,6 +92,7 @@ const Dashboard = () => {
                                 icon="👥" 
                                 colorClass="text-success bg-success bg-opacity-10" 
                                 subtitle={`${compareMonths?.last}: ${stats?.customersLastMonth?.toLocaleString('en-IN') || '0'}`}
+                                delay={0.3}
                             />
                             <StatCard 
                                 title="Growth Analysis" 
@@ -85,6 +100,7 @@ const Dashboard = () => {
                                 icon="📊" 
                                 colorClass={stats?.customerGrowth >= 0 ? 'text-success bg-primary bg-opacity-10' : 'text-danger bg-danger bg-opacity-10'} 
                                 subtitle={`${compareMonths?.current} vs ${compareMonths?.last}`}
+                                delay={0.4}
                             />
                         </div>
 

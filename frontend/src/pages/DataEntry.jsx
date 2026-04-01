@@ -146,9 +146,12 @@ const DataEntry = () => {
 
     const fetchReports = async (silent = true) => {
         try {
-            setIsReportsLoading(true);
+            // Only show loader if we have no data at all (first load)
+            if (reports.length === 0) setIsReportsLoading(true);
+            
             const res = await api.get('/data-entry');
             setReports(res.data);
+            
             // Update cache (limit to 50 for speed)
             localStorage.setItem('cachedReports', JSON.stringify(res.data.slice(0, 50)));
         } catch (error) {

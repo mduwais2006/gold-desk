@@ -61,6 +61,14 @@ body {
   transition: background-color var(--speed), color var(--speed);
 }
 
+/* GPU Performance Booster for Smooth Desktop Feel */
+.sidebar, .glass-panel, .brand-box, .stat-card, .nav-link {
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
 /* --- Splash & Loading (Absolute Centering) --- */
 .splash-screen {
   position: fixed;
@@ -137,9 +145,28 @@ body {
   height: 100vh;
   overflow-y: auto;
   padding: 2.5rem;
-  transition: all 0.3s ease;
+  transition: margin-left 0.3s ease, padding 0.3s ease;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+  transform: translateZ(0); /* Hardware Acceleration */
+}
+
+/* Scroll-Optimized Glass Table Headers */
+.table-responsive {
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  will-change: scroll-position;
+}
+
+thead.thead-glass {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px); /* Reduced blur for performance */
+  border-bottom: 2px solid var(--border-color);
+  transform: translateZ(0);
 }
 
 /* Breakpoints */

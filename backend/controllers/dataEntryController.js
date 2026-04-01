@@ -7,31 +7,45 @@ const getDataEntries = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        // HIGH-SPEED DATA ENGINE: Limit to most recent 500 records and order on server
-        const [subSnapshot, rootSnapshot] = await Promise.all([
-            db.collection('users').doc(userId).collection('dataEntries')
-              .orderBy('date', 'desc')
-              .limit(500)
-              .get(),
-            db.collection('dataEntries')
-              .where('userId', '==', userId)
-              .orderBy('date', 'desc')
-              .limit(100)
-              .get()
-        ]);
+        // RECOVERY-MODE DATA FETCH: Revert to broad fetch if missing composite indexes
+        let subDocs = [];
+        let rootDocs = [];
+        try {
+            const [subSnapshot, rootSnapshot] = await Promise.all([
+                db.collection('users').doc(userId).collection('dataEntries')
+                  .orderBy('date', 'desc')
+                  .limit(500)
+                  .get(),
+                db.collection('dataEntries')
+                  .where('userId', '==', userId)
+                  .orderBy('date', 'desc')
+                  .limit(200)
+                  .get()
+            ]);
+            subSnapshot.forEach(doc => subDocs.push({ id: doc.id, ...doc.data() }));
+            rootSnapshot.forEach(doc => rootDocs.push({ id: doc.id, ...doc.data() }));
+        } catch (queryErr) {
+            console.warn("Optimized index missing, using safe fallback:", queryErr.message);
+            // GUARANTEED BOOTSTRAP: Fetch without orderBy to avoid index errors entirely
+            const [subSnapshot, rootSnapshot] = await Promise.all([
+                db.collection('users').doc(userId).collection('dataEntries').limit(500).get(),
+                db.collection('dataEntries').where('userId', '==', userId).limit(500).get()
+            ]);
+            subSnapshot.forEach(doc => subDocs.push({ id: doc.id, ...doc.data() }));
+            rootSnapshot.forEach(doc => rootDocs.push({ id: doc.id, ...doc.data() }));
+        }
 
-        let entries = [];
-        subSnapshot.forEach(doc => entries.push({ id: doc.id, ...doc.data() }));
-        
-        // Add root items only if they don't already exist (backward compatibility check)
+        let entries = [...subDocs];
         const subIds = new Set(entries.map(e => e.id));
-        rootSnapshot.forEach(doc => {
+        rootDocs.forEach(doc => {
             if (!subIds.has(doc.id)) {
-                entries.push({ id: doc.id, ...doc.data() });
+                entries.push(doc);
             }
         });
 
-        // No intensive sort needed; server already returned them mostly ordered
+        // Safe in-memory sort if needed (fallback doesn't guarantee order)
+        entries.sort((a, b) => new Date(b.date) - new Date(a.date));
+
         res.status(200).json(entries);
     } catch (error) {
         console.error('Error fetching data entries:', error);

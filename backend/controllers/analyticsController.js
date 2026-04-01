@@ -32,16 +32,30 @@ const getDashboardAnalytics = async (req, res) => {
             console.error("Count aggregation failed, falling back to 0:", countErr.message);
         }
 
-        // Fetch documents - optimized to only fetch data from the last 2 months for dashboard stats
-        const [subSnapshot, rootSnapshot] = await Promise.all([
-            db.collection('users').doc(userId).collection('dataEntries')
-              .where('date', '>=', startOfLastMonth)
-              .get(),
-            db.collection('dataEntries')
-              .where('userId', '==', userId)
-              .where('date', '>=', startOfLastMonth)
-              .get()
-        ]);
+        // RECOVERY-MODE FETCH: Adaptive fetching with safety fallbacks
+        let subDocs = [];
+        let rootDocs = [];
+        try {
+            const [subSnapshot, rootSnapshot] = await Promise.all([
+                db.collection('users').doc(userId).collection('dataEntries')
+                  .where('date', '>=', startOfLastMonth)
+                  .get(),
+                db.collection('dataEntries')
+                  .where('userId', '==', userId)
+                  .where('date', '>=', startOfLastMonth)
+                  .get()
+            ]);
+            subSnapshot.forEach(doc => subDocs.push({ id: doc.id, ...doc.data() }));
+            rootSnapshot.forEach(doc => rootDocs.push({ id: doc.id, ...doc.data() }));
+        } catch (queryError) {
+            console.warn("Dashboard index missing, fallback to broad fetch:", queryError.message);
+            const [subSnapshot, rootSnapshot] = await Promise.all([
+                db.collection('users').doc(userId).collection('dataEntries').limit(1000).get(),
+                db.collection('dataEntries').where('userId', '==', userId).limit(1000).get()
+            ]);
+            subSnapshot.forEach(doc => subDocs.push({ id: doc.id, ...doc.data() }));
+            rootSnapshot.forEach(doc => rootDocs.push({ id: doc.id, ...doc.data() }));
+        }
 
         let stats = { 
             todayRevenue: 0, 
@@ -58,11 +72,10 @@ const getDashboardAnalytics = async (req, res) => {
         const todayStr = now.toISOString().split('T')[0];
         const seenIds = new Set();
 
-        const processEntry = (doc) => {
-            if (seenIds.has(doc.id)) return;
-            seenIds.add(doc.id);
+        const processEntry = (entry) => {
+            if (seenIds.has(entry.id)) return;
+            seenIds.add(entry.id);
 
-            const entry = doc.data();
             const rev = entry.finalTotal || 0;
             if (!entry.date) return; // Skip entries without date
             
@@ -86,8 +99,8 @@ const getDashboardAnalytics = async (req, res) => {
             }
         };
 
-        subSnapshot.forEach(processEntry);
-        rootSnapshot.forEach(processEntry);
+        subDocs.forEach(processEntry);
+        rootDocs.forEach(processEntry);
 
         // Calculate growth percentage
         const customerGrowth = stats.customersLastMonth === 0 
