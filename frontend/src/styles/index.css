@@ -637,51 +637,55 @@ thead.thead-glass {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid #d4af37; /* Gold */
+    border-bottom: 2px solid #000; /* Strictly Black */
     padding-bottom: 15px;
     margin-bottom: 20px;
   }
   .a4-header-main { display: flex; align-items: center; gap: 20px; }
-  .a4-logo { height: 60px; width: 60px; object-fit: contain; }
-  .a4-shop-name { color: #1e293b !important; font-size: 24pt; font-weight: bold; }
-  .a4-shop-address { color: #64748b !important; font-size: 10pt; }
+  .a4-logo { height: 60px; width: 60px; object-fit: contain; filter: grayscale(1); }
+  .a4-shop-name { color: #000 !important; font-size: 24pt; font-weight: bold; }
+  .a4-shop-address { color: #000 !important; font-size: 10pt; }
   .a4-invoice-meta { text-align: right; }
-  .a4-invoice-meta .label { font-weight: bold; color: #d4af37 !important; }
+  .a4-invoice-meta .label { font-weight: bold; color: #000 !important; }
 
   .a4-customer-section {
     display: flex;
     justify-content: space-between;
     margin-bottom: 30px;
-    background: #f8fafc !important;
+    background: #fff !important;
     padding: 15px;
-    border-radius: 8px;
+    border: 1px solid #000;
   }
-  .section-title { font-size: 8pt; text-transform: uppercase; color: #94a3b8 !important; font-weight: 800; margin-bottom: 5px; }
+  .section-title { font-size: 8pt; text-transform: uppercase; color: #000 !important; font-weight: 800; margin-bottom: 5px; }
   .customer-name { font-size: 12pt; margin: 0; color: #000 !important; }
-  .value { font-weight: bold; color: #1e293b !important; }
+  .value { font-weight: bold; color: #000 !important; }
 
   .a4-table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 30px;
+    border: 1px solid #000;
   }
   .a4-table th {
-    background: #d4af37 !important;
-    color: #1e293b !important;
+    background: #fff !important;
+    color: #000 !important;
     padding: 10px;
     text-align: left;
     font-size: 10pt;
+    border-bottom: 2px solid #000;
+    border-right: 1px solid #000;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   .a4-table td {
     padding: 12px 10px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #000;
+    border-right: 1px solid #000;
     font-size: 10pt;
     color: #000 !important;
   }
   .item-name { font-weight: bold; }
-  .item-price { font-weight: bold; color: #16a34a !important; }
+  .item-price { font-weight: bold; color: #000 !important; }
 
   .a4-summary-section {
     display: flex;
@@ -689,11 +693,30 @@ thead.thead-glass {
   }
   .a4-totals-box {
     width: 300px;
-    background: #f8fafc !important;
+    background: #fff !important;
     padding: 20px;
+    border: 1px solid #000;
     font-family: 'Inter', 'Courier New', monospace;
     font-size: 10pt;
     line-height: 1.3;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    color: #000 !important;
+  }
+
+  .divider {
+    border-top: 1px solid #000;
+    margin: 10px 0;
+  }
+
+  .final-value {
+     font-size: 14pt;
+     font-weight: 900;
+     color: #000 !important;
   }
 
   .thermal-divider-heavy {
@@ -716,17 +739,19 @@ thead.thead-glass {
     justify-content: space-between;
     font-weight: bold;
     font-size: 11pt;
+    color: #000 !important;
   }
 
   .item-sub-details {
     font-size: 9pt;
-    color: #444 !important;
+    color: #000 !important;
   }
 
   .grand-total {
     font-size: 14pt !important;
     font-weight: 900 !important;
     padding-top: 5px;
+    color: #000 !important;
   }
 
   /* 6. A4 Optimization */
@@ -736,6 +761,7 @@ thead.thead-glass {
     padding: 15mm;
     margin: 0 auto;
     background: white;
+    border: none;
   }
 }
 

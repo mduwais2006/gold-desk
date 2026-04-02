@@ -44,7 +44,7 @@ const LockScreen = () => {
                     <p className="text-secondary small">Welcome back, {user?.name}</p>
                 </div>
 
-                <form onSubmit={handleUnlock}>
+                <form onSubmit={handleUnlock} autoComplete="off">
                     <div className="form-group mb-4">
                         <div className="password-field-container">
                             <input
@@ -55,6 +55,7 @@ const LockScreen = () => {
                                 onChange={(e) => setPassword(e.target.value)}
                                 disabled={isUnlocking}
                                 style={{ paddingRight: '48px' }}
+                                autoComplete="off"
                             />
                             <span 
                                 className="password-toggle-icon" 

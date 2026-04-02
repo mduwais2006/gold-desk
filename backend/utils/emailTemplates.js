@@ -68,7 +68,71 @@ const getWelcomeEmailTemplate = (name, shopName = 'Your Shop', shopLogo = '') =>
     `;
 };
 
+const getResetAlertEmailTemplate = (otp, otpId, frontendUrl, backendUrl, shopName = 'Gold Desk Premium', shopLogo = '') => {
+    const finalLogo = shopLogo || `${frontendUrl || 'http://localhost:5173'}/logo.png`;
+    return `
+        <div style="font-family: 'Inter', -apple-system, sans-serif; max-width: 600px; margin: 30px auto; padding: 40px; border-radius: 24px; background: #ffffff; box-shadow: 0 20px 50px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+            <div style="text-align: center; margin-bottom: 35px;">
+                <img src="${finalLogo}" alt="Shop Logo" style="max-height: 80px; width: auto; margin-bottom: 20px; border-radius: 12px; border: 1px solid #f1f5f9;" />
+                <h1 style="color: #0f172a; font-weight: 800; margin: 0; font-size: 24px; text-transform: uppercase;">${shopName}</h1>
+            </div>
+            
+            <div style="background: #fff1f2; border-left: 4px solid #ef4444; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <h2 style="color: #9f1239; font-size: 18px; margin: 0 0 10px 0;">⚠️ Security Alert: Password Reset Attempt</h2>
+                <p style="color: #be123c; margin: 0; font-size: 14px;">Someone is currently trying to change the password for your account.</p>
+            </div>
+            
+            <p style="color: #475569; line-height: 1.6; font-size: 15px; text-align: center;">
+                If this was you, please use the following OTP to proceed:
+            </p>
+            
+            <div style="background: #f8fafc; padding: 25px; border-radius: 16px; text-align: center; border: 2px dashed #cbd5e1; margin-bottom: 30px;">
+                <div style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #eab308;">${otp}</div>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <p style="color: #1e293b; font-weight: 600; margin-bottom: 20px;">Are you the one trying to reset the password?</p>
+                <div style="display: flex; justify-content: center; gap: 15px;">
+                    <a href="${frontendUrl || 'http://localhost:5173'}/login" style="background: #10b981; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: 700; display: inline-block;">Yes, I am</a>
+                    <a href="${backendUrl || 'http://localhost:5000'}/api/auth/forgot-password/cancel?id=${otpId}" style="background: #ef4444; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: 700; display: inline-block;">I am not</a>
+                </div>
+            </div>
+            
+            <p style="color: #64748b; font-size: 13px; text-align: center; line-height: 1.5;">
+                Clicking "I am not" will immediately block the password reset attempt and protect your account.
+            </p>
+        </div>
+    `;
+};
+
+const getPasswordChangedEmailTemplate = (name, shopName = 'Gold Desk Premium', shopLogo = '') => {
+    const finalLogo = shopLogo || `http://localhost:5173/logo.png`;
+    return `
+        <div style="font-family: 'Inter', -apple-system, sans-serif; max-width: 600px; margin: 30px auto; padding: 40px; border-radius: 24px; background: #ffffff; box-shadow: 0 20px 50px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+            <div style="text-align: center; margin-bottom: 35px;">
+                <img src="${finalLogo}" alt="Shop Logo" style="max-height: 80px; width: auto; margin-bottom: 20px; border-radius: 12px; border: 1px solid #f1f5f9;" />
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
+                <h2 style="color: #1e293b; font-size: 24px; font-weight: 700; margin: 0;">Password Changed Successfully!</h2>
+            </div>
+            
+            <p style="color: #475569; font-size: 16px; text-align: center; line-height: 1.6;">
+                Hi ${name},<br>
+                The password for your <strong>${shopName}</strong> account has been successfully updated.
+            </p>
+            
+            <p style="color: #64748b; font-size: 14px; text-align: center; line-height: 1.6; margin-top: 30px; padding: 15px; background: #f8fafc; border-radius: 8px;">
+                If you did not make this change, please contact your administrator or reset your password again immediately.
+            </p>
+        </div>
+    `;
+};
+
 module.exports = {
     getOtpEmailTemplate,
-    getWelcomeEmailTemplate
+    getWelcomeEmailTemplate,
+    getResetAlertEmailTemplate,
+    getPasswordChangedEmailTemplate
 };

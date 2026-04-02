@@ -136,7 +136,7 @@ const VerifyOTP = () => {
                     <p className="text-secondary small">Enter the 6-digit code sent to<br /><strong className="text-primary-emphasis">{loginIdentifier}</strong></p>
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="d-flex flex-column gap-3">
+                <form onSubmit={handleSubmit(onSubmit)} className="d-flex flex-column gap-3" autoComplete="off">
                     <div>
                         <input
                             type="text"
@@ -144,6 +144,7 @@ const VerifyOTP = () => {
                             className="form-control w-100 form-control-glass text-center fs-2 fw-bold tracking-widest"
                             placeholder="------"
                             style={{ letterSpacing: '0.5em' }}
+                            autoComplete="one-time-code"
                             {...register('otp', { required: 'OTP is required', minLength: { value: 6, message: 'Must be 6 digits' } })}
                         />
                         {errors.otp && <span className="text-danger small mt-1 d-block">{errors.otp.message}</span>}

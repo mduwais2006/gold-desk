@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const { db, admin } = require('../config/firebase');
-const { getOtpEmailTemplate, getWelcomeEmailTemplate } = require('../utils/emailTemplates');
+const { getOtpEmailTemplate, getWelcomeEmailTemplate, getResetAlertEmailTemplate, getPasswordChangedEmailTemplate } = require('../utils/emailTemplates');
 
 // BLAZING FAST: Initialize Transporter once at top level
 const transporter = nodemailer.createTransport({
@@ -185,7 +185,7 @@ const loginUser = async (req, res) => {
 
             // ORGANIZED: Save OTP to user's private sub-collection
             const otpRef = db.collection('users').doc(doc.id).collection('otps').doc();
-            await otpRef.set({
+            const otpPromise = otpRef.set({
                 otpCode: generatedOtp,
                 phoneNumber: user.phone,
                 loginIdentifier: cleanIdentifier,
@@ -201,15 +201,20 @@ const loginUser = async (req, res) => {
             let emailError = null;
 
             if (!isDevMode) {
-                const result = await sendEmail({
-                    email: cleanIdentifier,
-                    subject: `${user.shopName || 'Gold Desk'} - Your Login OTP`,
-                    message: `Your login OTP is ${generatedOtp}. It is valid for 90 seconds.`,
-                    html: getOtpEmailTemplate(generatedOtp, 'Login', user.shopName, user.shopLogo)
-                });
+                // RUN IN PARALLEL: Save to DB and Send Email
+                const [result] = await Promise.all([
+                    sendEmail({
+                        email: cleanIdentifier,
+                        subject: `${user.shopName || 'Gold Desk'} - Your Login OTP`,
+                        message: `Your login OTP is ${generatedOtp}. It is valid for 90 seconds.`,
+                        html: getOtpEmailTemplate(generatedOtp, 'Login', user.shopName, user.shopLogo)
+                    }),
+                    otpPromise
+                ]);
                 emailSent = result.success;
                 emailError = result.error;
             } else {
+                await otpPromise; // Still need to wait for DB in dev mode for consistency
                 console.log(`\n\x1b[43m\x1b[30m  👑 GOLD DESK SMART DEV MODE  \x1b[0m`);
                 console.log(`\x1b[1m\x1b[33m  OTP FOR ${cleanIdentifier} IS: \x1b[0m\x1b[1m\x1b[32m${generatedOtp}\x1b[0m`);
                 console.log(`\x1b[43m\x1b[30m  USE THIS CODE TO LOG IN NOW  \x1b[0m\n`);
@@ -358,7 +363,7 @@ const forgotPasswordRequest = async (req, res) => {
         const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
         const otpRef = usersRef.doc(userDoc.id).collection('otps').doc();
-        await otpRef.set({
+        const otpPromise = otpRef.set({
             otpCode: generatedOtp,
             type: 'forgot_password',
             status: 'pending',
@@ -373,15 +378,20 @@ const forgotPasswordRequest = async (req, res) => {
         let emailError = null;
 
         if (!isDevMode) {
-            const result = await sendEmail({
-                email: sendToEmail,
-                subject: `${userData.shopName || 'Gold Desk'} - Password Reset OTP`,
-                message: `Your OTP for resetting your Gold Desk password is ${generatedOtp}. It is valid for 90 seconds.`,
-                html: getOtpEmailTemplate(generatedOtp, 'Password Reset', userData.shopName, userData.shopLogo)
-            });
+            // RUN IN PARALLEL: Save to DB and Send Email
+        const [result] = await Promise.all([
+                sendEmail({
+                    email: sendToEmail,
+                    subject: `⚠️ Security Alert: ${userData.shopName || 'Gold Desk'} Password Reset`,
+                    message: `Someone is trying to change your password. OTP: ${generatedOtp}. If not you, click the cancel link in your email.`,
+                    html: getResetAlertEmailTemplate(generatedOtp, otpRef.id, 'http://localhost:5173', 'http://localhost:5001', userData.shopName, userData.shopLogo)
+                }),
+                otpPromise
+        ]);
             emailSent = result.success;
             emailError = result.error;
         } else {
+            await otpPromise; // Wait for DB consistency
             console.log(`\n\x1b[43m\x1b[30m  👑 GOLD DESK RECOVERY MODE   \x1b[0m`);
             console.log(`\x1b[1m\x1b[33m  RECOVERY OTP FOR ${sendToEmail} IS: \x1b[0m\x1b[1m\x1b[32m${generatedOtp}\x1b[0m`);
             console.log(`\x1b[43m\x1b[30m  USE THIS CODE TO RESET NOW   \x1b[0m\n`);
@@ -445,22 +455,45 @@ const forgotPasswordReset = async (req, res) => {
         const otpRef = usersRef.doc(userId).collection('otps');
         const otpSnap = await otpRef.where('otpCode', '==', otp)
                                     .where('type', '==', 'forgot_password')
-                                    .where('status', '==', 'pending').get();
+                                    .where('status', 'in', ['pending', 'verified']).get();
 
         if (otpSnap.empty) {
             return res.status(400).json({ message: 'otp is wrong' });
         }
 
         const otpDoc = otpSnap.docs[0];
+        if (otpDoc.data().status === 'cancelled_by_user') {
+            return res.status(400).json({ 
+                message: 'This reset attempt was blocked by the account owner.',
+                isBlocked: true
+            });
+        }
         if (new Date().getTime() > otpDoc.data().expiresAt) {
             await otpRef.doc(otpDoc.id).update({ status: 'expired' });
             return res.status(400).json({ message: 'otp is wrong' });
+        }
+
+        // 1. Check if the new password is the same as the old one
+        const isSameAsOld = await bcrypt.compare(newPassword, userDoc.data().password);
+        if (isSameAsOld) {
+            return res.status(400).json({ 
+                message: 'You cannot use a previous password. Please choose a new, unique password for your security.',
+                isReuse: true
+            });
         }
 
         // Hash and save the new password in Firestore
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
         await usersRef.doc(userId).update({ password: hashedPassword });
+
+        // Send confirmation email
+        sendEmail({
+            email: userDoc.data().recoveryEmail || userDoc.data().email,
+            subject: `🔐 Password Changed Successfully - ${userDoc.data().shopName || 'Gold Desk'}`,
+            message: `Hi ${userDoc.data().name}, your password has been changed successfully.`,
+            html: getPasswordChangedEmailTemplate(userDoc.data().name, userDoc.data().shopName, userDoc.data().shopLogo)
+        });
 
         // Clean up: delete the OTP after use
         await otpRef.doc(otpDoc.id).delete();
@@ -472,10 +505,128 @@ const forgotPasswordReset = async (req, res) => {
     }
 };
 
+// @desc    Verify OTP for Password Reset (Intermediate step)
+// @route   POST /api/auth/forgot-password/verify-otp
+// @access  Public
+const forgotPasswordVerifyOtp = async (req, res) => {
+    try {
+        const { accountEmail, otp } = req.body;
+        if (!accountEmail || !otp) {
+            return res.status(400).json({ message: 'Email and OTP are required' });
+        }
+
+        const cleanEmail = accountEmail.trim().toLowerCase();
+        const usersRef = db.collection('users');
+
+        let snapshot = await usersRef.where('recoveryEmail', '==', cleanEmail).get();
+        if (snapshot.empty) {
+            snapshot = await usersRef.where('email', '==', cleanEmail).get();
+        }
+
+        if (snapshot.empty) {
+            return res.status(404).json({ message: 'Account not found' });
+        }
+
+        const userDoc = snapshot.docs[0];
+        const userId = userDoc.id;
+
+        const otpRef = usersRef.doc(userId).collection('otps');
+        const otpSnap = await otpRef.where('otpCode', '==', otp)
+                                    .where('type', '==', 'forgot_password')
+                                    .where('status', 'in', ['pending', 'verified']).get();
+
+        if (otpSnap.empty) {
+            return res.status(400).json({ message: 'otp is wrong' });
+        }
+
+        const otpDoc = otpSnap.docs[0];
+        if (otpDoc.data().status === 'cancelled_by_user') {
+            return res.status(403).json({ message: 'This reset attempt has been blocked by the user.' });
+        }
+        
+        if (new Date().getTime() > otpDoc.data().expiresAt) {
+            await otpRef.doc(otpDoc.id).update({ status: 'expired' });
+            return res.status(400).json({ message: 'otp is wrong' });
+        }
+
+        await otpRef.doc(otpDoc.id).update({ status: 'verified' });
+
+        res.json({ message: 'OTP verified successfully' });
+    } catch (error) {
+        console.error("Forgot password verify otp error:", error);
+        res.status(500).json({ message: 'Failed to verify OTP' });
+    }
+};
+
+// @desc    Cancel Password Reset (Security Lock)
+// @route   GET /api/auth/forgot-password/cancel
+// @access  Public
+const forgotPasswordCancel = async (req, res) => {
+    try {
+        const { id } = req.query;
+        if (!id) return res.status(400).send('Invalid request');
+
+        // Find the OTP across all users (or we could pass userId, but query search is fine here)
+        const usersSnap = await db.collection('users').get();
+        let found = false;
+        
+        for (const userDoc of usersSnap.docs) {
+            const otpRef = db.collection('users').doc(userDoc.id).collection('otps').doc(id);
+            const otpSnap = await otpRef.get();
+            
+            if (otpSnap.exists) {
+                await otpRef.update({ status: 'cancelled_by_user' });
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            // Emit socket event to notify all connected clients for this user
+            // In a real app we'd target specific user, but for now we emit to all
+            // The frontend ForgotPassword.jsx will listen for this.
+            req.io.emit('reset_blocked', { otpId: id });
+
+            res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Account Protected</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+                    <style>
+                        body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+                        .card { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; max-width: 400px; }
+                        h1 { color: #ef4444; margin-top: 0; }
+                        p { color: #64748b; line-height: 1.6; }
+                        .icon { font-size: 64px; margin-bottom: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <div class="icon">🛡️</div>
+                        <h1>Account Protected</h1>
+                        <p>The password reset attempt has been blocked successfully.</p>
+                        <p>The application on your laptop has been notified and the reset process has been terminated.</p>
+                        <p>Your current password remains active. You can now close this window on your mobile.</p>
+                    </div>
+                </body>
+                </html>
+            `);
+        } else {
+            res.status(404).send('Request not found or already processed.');
+        }
+    } catch (error) {
+        console.error("Cancel reset error:", error);
+        res.status(500).send('Internal server error');
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
     verifyOtp,
     forgotPasswordRequest,
+    forgotPasswordVerifyOtp,
+    forgotPasswordCancel,
     forgotPasswordReset
 };

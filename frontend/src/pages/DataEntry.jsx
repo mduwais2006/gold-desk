@@ -11,6 +11,7 @@ import { usePrinter } from '../context/PrinterContext';
 import { getAppTime } from '../utils/timeUtils';
 import LoadingSequence from '../components/LoadingSequence';
 import Receipt from '../components/Receipt';
+import SuggestionDropdown from '../components/SuggestionDropdown';
 import Swal from 'sweetalert2';
 
 
@@ -100,17 +101,35 @@ const DataEntry = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [activeSuggestionField, setActiveSuggestionField] = useState(null);
 
-    const uniqueCustomers = useMemo(() => {
-        const map = new Map();
+    const { uniqueCustomers, uniqueStaff, uniqueItems } = useMemo(() => {
+        const custMap = new Map();
+        const staffSet = new Set();
+        const itemSet = new Set();
+
         reports.forEach(r => {
-            if (r.customerName && r.mobile && !map.has(r.mobile)) {
-                map.set(r.mobile, { name: r.customerName, mobile: r.mobile });
+            if (r.customerName && r.mobile && !custMap.has(r.mobile)) {
+                custMap.set(r.mobile, { name: r.customerName, mobile: r.mobile });
             }
+            if (r.staffName) staffSet.add(r.staffName);
+            if (r.itemName) itemSet.add(r.itemName);
         });
-        const arr = Array.from(map.values());
-        localStorage.setItem('cachedCustomers', JSON.stringify(arr));
-        return arr;
+
+        const custArr = Array.from(custMap.values());
+        const staffArr = Array.from(staffSet);
+        const itemsArr = Array.from(itemSet);
+
+        localStorage.setItem('cachedCustomers', JSON.stringify(custArr));
+        localStorage.setItem('cachedStaff', JSON.stringify(staffArr));
+        localStorage.setItem('cachedItems', JSON.stringify(itemsArr));
+        
+        return { 
+            uniqueCustomers: custArr, 
+            uniqueStaff: staffArr, 
+            uniqueItems: itemsArr 
+        };
     }, [reports]);
+
+    const commonGstRates = [3, 0, 5, 12, 18, 28];
 
     const [filters, setFilters] = useState({
         searchDate: '',
@@ -185,17 +204,26 @@ const DataEntry = () => {
             return;
         }
 
-        if (name === 'customerName' && value.length > 0) {
-            const matches = uniqueCustomers.filter(c => c.name.toLowerCase().includes(value.toLowerCase())).slice(0, 5);
-            setSuggestions(matches);
-            setActiveSuggestionField('customerName');
-        } else if (name === 'mobile' && value.length > 2) {
-            const matches = uniqueCustomers.filter(c => c.mobile.includes(value)).slice(0, 5);
-            setSuggestions(matches);
-            setActiveSuggestionField('mobile');
-        } else if (name === 'customerName' || name === 'mobile') {
-            setSuggestions([]);
-            setActiveSuggestionField(null);
+        if (name === 'customerName' || name === 'mobile') {
+            const query = value.toLowerCase();
+            if (name === 'customerName') {
+                setSuggestions(uniqueCustomers.filter(c => !query || c.name.toLowerCase().includes(query)).map(c => ({ label: c.name, subLabel: `📱 ${c.mobile}`, ...c })).slice(0, 5));
+            } else {
+                setSuggestions(uniqueCustomers.filter(c => !query || c.mobile.includes(query)).map(c => ({ label: c.mobile, subLabel: `👤 ${c.name}`, ...c })).slice(0, 5));
+            }
+            setActiveSuggestionField(name);
+        } else if (name === 'staffName') {
+            const query = value.toLowerCase();
+            setSuggestions(uniqueStaff.filter(s => !query || s.toLowerCase().includes(query)).map(s => ({ label: s, value: s })).slice(0, 5));
+            setActiveSuggestionField('staffName');
+        } else if (name === 'itemName') {
+            const query = value.toLowerCase();
+            setSuggestions(uniqueItems.filter(i => !query || i.toLowerCase().includes(query)).map(i => ({ label: i, value: i })).slice(0, 5));
+            setActiveSuggestionField('itemName');
+        } else if (name === 'gstPercentage') {
+            const query = value;
+            setSuggestions(commonGstRates.filter(r => !query || r.toString().startsWith(query)).map(r => ({ label: `${r}%`, value: r })).slice(0, 5));
+            setActiveSuggestionField('gstPercentage');
         }
     };
 
@@ -593,63 +621,88 @@ const DataEntry = () => {
                                         Data Entry
                                     </h5>
 
-                                    <form onSubmit={handleSubmit}>
+                                    <form onSubmit={handleSubmit} autoComplete="off">
                                         <div className="row g-4">
                                             <div className="col-md-4 position-relative">
                                                 <label className="form-label small fw-bold text-secondary">Customer Name <span className="text-muted fw-normal">(Optional)</span></label>
-                                                <input type="text" name="customerName" value={formData.customerName} onChange={handleInputChange} onFocus={() => setActiveSuggestionField('customerName')} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} className="form-control form-control-glass" placeholder="John Doe" autoComplete="name" />
+                                                <input type="text" name="customerName" value={formData.customerName} onChange={handleInputChange} onFocus={(e) => {
+                                                    const val = e.target.value.toLowerCase();
+                                                    setSuggestions(uniqueCustomers.filter(c => !val || c.name.toLowerCase().includes(val)).map(c => ({ label: c.name, subLabel: `📱 ${c.mobile}`, ...c })).slice(0, 5));
+                                                    setActiveSuggestionField('customerName')
+                                                }} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} className="form-control form-control-glass shadow-sm" placeholder="John Doe" autoComplete="one-time-code" />
                                                 
-                                                {/* Beautiful Suggestion Dropdown */}
-                                                {activeSuggestionField === 'customerName' && suggestions.length > 0 && (
-                                                    <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="position-absolute w-100 mt-1 shadow-lg border rounded-3 overflow-hidden bg-white" style={{ zIndex: 1050, top: '100%', left: 0 }}>
-                                                        <div className="d-flex justify-content-between px-3 py-2 bg-light border-bottom">
-                                                            <span className="small fw-bold text-secondary">Past Customers</span>
-                                                            <button type="button" className="btn btn-sm btn-link text-danger p-0 fw-bold border-0 text-decoration-none" onMouseDown={(e) => { e.preventDefault(); setSuggestions([]); setActiveSuggestionField(null); }}>✕ Cancel</button>
-                                                        </div>
-                                                        <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
-                                                            {suggestions.map((s, i) => (
-                                                                <div key={i} className="px-3 py-2 border-bottom hover-bg-light" style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => { setFormData(prev => ({ ...prev, customerName: s.name, mobile: s.mobile })); setSuggestions([]); }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                                                    <div className="fw-bold text-dark">{s.name}</div>
-                                                                    <div className="small text-secondary fw-semibold">📱 {s.mobile}</div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </motion.div>
-                                                )}
+                                                <SuggestionDropdown 
+                                                    isVisible={activeSuggestionField === 'customerName'}
+                                                    suggestions={suggestions}
+                                                    title="Past Customers"
+                                                    onCancel={() => setActiveSuggestionField(null)}
+                                                    onSelect={(s) => {
+                                                        setFormData(prev => ({ ...prev, customerName: s.name, mobile: s.mobile }));
+                                                        setActiveSuggestionField(null);
+                                                    }}
+                                                    renderItem={(s) => (
+                                                        <>
+                                                            <div className="fw-bold text-dark">{s.label}</div>
+                                                            <div className="small text-secondary fw-semibold">{s.subLabel}</div>
+                                                        </>
+                                                    )}
+                                                />
                                             </div>
+
                                             <div className="col-md-4 position-relative">
                                                 <label className="form-label small fw-bold text-secondary">Mobile <span className="text-muted fw-normal">(Optional)</span></label>
-                                                <input type="tel" name="mobile" value={formData.mobile} onChange={handleInputChange} onFocus={() => setActiveSuggestionField('mobile')} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} className="form-control form-control-glass" placeholder="+91" autoComplete="tel" />
+                                                <input type="tel" name="mobile" value={formData.mobile} onChange={handleInputChange} onFocus={(e) => {
+                                                    const val = e.target.value;
+                                                    setSuggestions(uniqueCustomers.filter(c => !val || c.mobile.includes(val)).map(c => ({ label: c.mobile, subLabel: `👤 ${c.name}`, ...c })).slice(0, 5));
+                                                    setActiveSuggestionField('mobile')
+                                                }} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} className="form-control form-control-glass shadow-sm" placeholder="+91" autoComplete="one-time-code" />
                                                 
-                                                {/* Beautiful Suggestion Dropdown */}
-                                                {activeSuggestionField === 'mobile' && suggestions.length > 0 && (
-                                                    <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="position-absolute w-100 mt-1 shadow-lg border rounded-3 overflow-hidden bg-white" style={{ zIndex: 1050, top: '100%', left: 0 }}>
-                                                        <div className="d-flex justify-content-between px-3 py-2 bg-light border-bottom">
-                                                            <span className="small fw-bold text-secondary">Past Customers</span>
-                                                            <button type="button" className="btn btn-sm btn-link text-danger p-0 fw-bold border-0 text-decoration-none" onMouseDown={(e) => { e.preventDefault(); setSuggestions([]); setActiveSuggestionField(null); }}>✕ Cancel</button>
-                                                        </div>
-                                                        <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
-                                                            {suggestions.map((s, i) => (
-                                                                <div key={i} className="px-3 py-2 border-bottom hover-bg-light" style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => { setFormData(prev => ({ ...prev, customerName: s.name, mobile: s.mobile })); setSuggestions([]); }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                                                    <div className="fw-bold text-dark">{s.mobile}</div>
-                                                                    <div className="small text-secondary fw-semibold">👤 {s.name}</div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </motion.div>
-                                                )}
+                                                <SuggestionDropdown 
+                                                    isVisible={activeSuggestionField === 'mobile'}
+                                                    suggestions={suggestions}
+                                                    title="By Mobile"
+                                                    onCancel={() => setActiveSuggestionField(null)}
+                                                    onSelect={(s) => {
+                                                        setFormData(prev => ({ ...prev, customerName: s.name, mobile: s.mobile }));
+                                                        setActiveSuggestionField(null);
+                                                    }}
+                                                    renderItem={(s) => (
+                                                        <>
+                                                            <div className="fw-bold text-dark">{s.label}</div>
+                                                            <div className="small text-secondary fw-semibold">{s.subLabel}</div>
+                                                        </>
+                                                    )}
+                                                />
                                             </div>
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">Transaction Date & Time</label>
-                                                <input type="datetime-local" step="1" name="date" value={formData.date} onChange={handleInputChange} className="form-control form-control-glass" required autoComplete="on" />
+                                                <input type="datetime-local" step="1" name="date" value={formData.date} onChange={handleInputChange} className="form-control form-control-glass" required autoComplete="off" />
                                             </div>
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">Bill Number</label>
                                                 <input type="text" name="billNumber" value={formData.billNumber} onChange={handleInputChange} className="form-control form-control-glass fw-bold text-primary" placeholder="e.g. G26101" required autoComplete="off" />
                                             </div>
-                                            <div className="col-md-4">
-                                                <label className="form-label small fw-bold text-secondary">Staff Name <span className="text-muted fw-normal">(Optional)</span></label>
-                                                <input type="text" name="staffName" value={formData.staffName} onChange={handleInputChange} className="form-control form-control-glass" placeholder="Enter Staff Name" />
+                                            <div className="col-md-4 position-relative">
+                                                <label className="form-label small fw-bold text-secondary">Staff Name</label>
+                                                <input type="text" name="staffName" value={formData.staffName} onChange={handleInputChange} onFocus={(e) => {
+                                                    const val = e.target.value.toLowerCase();
+                                                    setSuggestions(uniqueStaff.filter(s => !val || s.toLowerCase().includes(val)).map(s => ({ label: s, value: s })).slice(0, 5));
+                                                    setActiveSuggestionField('staffName');
+                                                }} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} className="form-control form-control-glass fw-bold" placeholder="Select Staff" required autoComplete="one-time-code" />
+                                                
+                                                <SuggestionDropdown 
+                                                    isVisible={activeSuggestionField === 'staffName'}
+                                                    suggestions={suggestions}
+                                                    title="History / Employees"
+                                                    onCancel={() => setActiveSuggestionField(null)}
+                                                    onSelect={(s) => {
+                                                        setFormData(prev => ({ ...prev, staffName: s.value }));
+                                                        setActiveSuggestionField(null);
+                                                    }}
+                                                    renderItem={(s) => (
+                                                        <div className="fw-bold text-dark text-uppercase">{s.label}</div>
+                                                    )}
+                                                />
                                             </div>
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">Item Type</label>
@@ -657,12 +710,13 @@ const DataEntry = () => {
                                                     {itemTypes.map(item => <option key={item} value={item}>{item}</option>)}
                                                 </select>
                                             </div>
-                                            <div className="col-md-4">
+                                            <div className="col-md-4 position-relative">
                                                 <label className="form-label small fw-bold text-secondary">Item Name</label>
                                                 <select name="itemName" value={formData.itemName} onChange={handleInputChange} className="form-select form-control-glass">
                                                     {jewelryItems.map(item => <option key={item} value={item}>{item}</option>)}
                                                 </select>
                                                 {formData.itemName === 'Other' && (
+                                                    <>
                                                     <motion.input
                                                         initial={{ opacity: 0, height: 0 }}
                                                         animate={{ opacity: 1, height: 'auto' }}
@@ -670,17 +724,38 @@ const DataEntry = () => {
                                                         name="customItemName"
                                                         value={formData.customItemName}
                                                         onChange={handleInputChange}
-                                                        className="form-control form-control-glass mt-2 border-warning"
+                                                        onFocus={(e) => {
+                                                            const val = e.target.value.toLowerCase();
+                                                            setSuggestions(uniqueItems.filter(s => !val || s.toLowerCase().includes(val)).map(s => ({ label: s, value: s })).slice(0, 5));
+                                                            setActiveSuggestionField('customItemName');
+                                                        }}
+                                                        onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)}
+                                                        className="form-control form-control-glass mt-2 border-warning fw-bold text-warning"
                                                         placeholder="Enter item name manually..."
                                                         required
+                                                        autoComplete="one-time-code"
                                                     />
+                                                    <SuggestionDropdown 
+                                                        isVisible={activeSuggestionField === 'customItemName'}
+                                                        suggestions={suggestions}
+                                                        title="Recent Items"
+                                                        onCancel={() => setActiveSuggestionField(null)}
+                                                        onSelect={(s) => {
+                                                            setFormData(prev => ({ ...prev, customItemName: s.value }));
+                                                            setActiveSuggestionField(null);
+                                                        }}
+                                                        renderItem={(s) => (
+                                                            <div className="fw-bold text-dark">{s.label}</div>
+                                                        )}
+                                                    />
+                                                    </>
                                                 )}
                                             </div>
 
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">Weight (Grams)</label>
                                                 <div className="input-group">
-                                                    <input type="number" step="0.001" name="grams" value={formData.grams} onChange={handleInputChange} className="form-control form-control-glass" placeholder="0.000" required autoComplete="on" />
+                                                    <input type="number" step="0.001" name="grams" value={formData.grams} onChange={handleInputChange} className="form-control form-control-glass" placeholder="0.000" required autoComplete="off" />
                                                     <span className="input-group-text border-0 small">g</span>
                                                 </div>
                                             </div>
@@ -688,21 +763,21 @@ const DataEntry = () => {
                                                 <label className="form-label small fw-bold text-secondary">Rate per Gram</label>
                                                 <div className="input-group">
                                                     <span className="input-group-text border-0 small">₹</span>
-                                                    <input type="number" name="ratePerGram" value={formData.ratePerGram} onChange={handleInputChange} className="form-control form-control-glass" placeholder="0" required autoComplete="on" />
+                                                    <input type="number" name="ratePerGram" value={formData.ratePerGram} onChange={handleInputChange} className="form-control form-control-glass" placeholder="0" required autoComplete="off" />
                                                 </div>
                                             </div>
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">Negotiable (Discount)</label>
                                                 <div className="input-group">
                                                     <span className="input-group-text border-0 small">₹</span>
-                                                    <input type="number" name="negotiableAmount" value={formData.negotiableAmount} onChange={handleInputChange} className="form-control form-control-glass text-danger fw-bold" placeholder="0" autoComplete="on" />
+                                                    <input type="number" name="negotiableAmount" value={formData.negotiableAmount} onChange={handleInputChange} className="form-control form-control-glass text-danger fw-bold" placeholder="0" autoComplete="off" />
                                                 </div>
                                             </div>
 
                                             <div className="col-md-4">
                                                 <label className="form-label small fw-bold text-secondary">GST Percentage (%)</label>
                                                 <div className="input-group">
-                                                    <input type="number" name="gstPercentage" value={formData.gstPercentage} onChange={handleInputChange} className="form-control form-control-glass fw-bold text-primary" placeholder="0" autoComplete="on" />
+                                                    <input type="number" name="gstPercentage" value={formData.gstPercentage} onChange={handleInputChange} className="form-control form-control-glass fw-bold text-primary" placeholder="0" autoComplete="off" />
                                                     <span className="input-group-text border-0 small">%</span>
                                                 </div>
                                             </div>
@@ -752,7 +827,8 @@ const DataEntry = () => {
                                                     localStorage.setItem('pendingCustomerDetails', JSON.stringify({
                                                         customerName: formData.customerName,
                                                         mobile: formData.mobile,
-                                                        billNumber: formData.billNumber
+                                                        billNumber: formData.billNumber,
+                                                        staffName: formData.staffName
                                                     }));
 
                                                     navigate('/billing');

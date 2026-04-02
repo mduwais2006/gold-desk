@@ -5,18 +5,44 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 import { auth, setupRecaptcha, signInWithPhoneNumber } from '../utils/firebase';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = () => {
-    const { register, handleSubmit, formState: { errors } } = useForm();
+    const { register, handleSubmit, watch, formState: { errors } } = useForm();
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [emailAlert, setEmailAlert] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
+    const watchedIdentifier = watch('loginIdentifier', '');
+
     useEffect(() => {
-        // Pre-initialize reCAPTCHA on mount to make OTP generation instantly fast "like Google"
+        // Pre-initialize reCAPTCHA on mount to make OTP generation instantly fast
         setupRecaptcha('sign-in-button');
     }, []);
+
+    // Auto-dismiss email alert after 3 seconds
+    useEffect(() => {
+        if (emailAlert) {
+            const t = setTimeout(() => setEmailAlert(false), 3000);
+            return () => clearTimeout(t);
+        }
+    }, [emailAlert]);
+
+    const handleForgotPasswordClick = (e) => {
+        e.preventDefault();
+        const val = (watchedIdentifier || '').trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!val || !emailRegex.test(val)) {
+            setEmailAlert(true);
+            return;
+        }
+
+        // Valid email — navigate and pre-fill on ForgotPassword page
+        navigate('/forgot-password', { state: { prefillEmail: val } });
+    };
 
     const onSubmit = async (data) => {
         try {
@@ -25,13 +51,12 @@ const Login = () => {
 
             if (res.authMethod === 'firebase_phone') {
                 toast.info('Sending SMS via Google Firebase...');
-                // Use the pre-initialized recaptchaVerifier, or set it up if somehow missing
                 const recaptchaVerifier = window.recaptchaVerifier || setupRecaptcha('sign-in-button');
-                                
+
                 try {
                     const confirmationResult = await signInWithPhoneNumber(auth, res.formattedPhone, recaptchaVerifier);
                     window.confirmationResult = confirmationResult;
-                    
+
                     await Swal.fire({
                         icon: 'success',
                         title: 'OTP Sent Successfully',
@@ -95,8 +120,7 @@ const Login = () => {
                     <p className="text-secondary small">Secure Access to Your Business</p>
                 </div>
 
-
-                <form onSubmit={handleSubmit(onSubmit)} className="d-flex flex-column gap-3">
+                <form onSubmit={handleSubmit(onSubmit)} className="d-flex flex-column gap-3" autoComplete="off">
                     <div>
                         <label className="form-label small fw-semibold">Email or Phone Number</label>
                         <input
@@ -104,7 +128,7 @@ const Login = () => {
                             className="form-control w-100 form-control-glass theme-light"
                             placeholder="Email or +1 234 567 890"
                             {...register('loginIdentifier', { required: 'Email or Phone is required' })}
-                            autoComplete="username"
+                            autoComplete="off"
                         />
                         {errors.loginIdentifier && <span className="text-danger small mt-1 d-block">{errors.loginIdentifier.message}</span>}
                     </div>
@@ -117,10 +141,10 @@ const Login = () => {
                                 className="form-control w-100 form-control-glass with-toggle"
                                 placeholder="••••••••"
                                 {...register('password', { required: 'Password is required' })}
-                                autoComplete="current-password"
+                                autoComplete="off"
                             />
-                            <span 
-                                className="password-toggle-icon" 
+                            <span
+                                className="password-toggle-icon"
                                 onClick={() => setShowPassword(!showPassword)}
                                 title={showPassword ? 'Hide Password' : 'Show Password'}
                             >
@@ -131,10 +155,48 @@ const Login = () => {
                                 )}
                             </span>
                         </div>
+
+                        {/* Animated Email Validation Alert — shown when email is missing/invalid on Forgot Password click */}
+                        <AnimatePresence>
+                            {emailAlert && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                                    className="d-flex align-items-start gap-2 mt-2 px-3 py-2 rounded-3 shadow-sm"
+                                    style={{
+                                        background: 'linear-gradient(135deg, rgba(220,53,69,0.12), rgba(220,53,69,0.06))',
+                                        border: '1px solid rgba(220,53,69,0.35)',
+                                        backdropFilter: 'blur(8px)'
+                                    }}
+                                >
+                                    <span style={{ fontSize: '1rem', lineHeight: 1.5 }}>⚠️</span>
+                                    <div className="flex-grow-1">
+                                        <div className="fw-bold text-danger" style={{ fontSize: '0.8rem' }}>Valid Email Required</div>
+                                        <div className="text-secondary" style={{ fontSize: '0.72rem', lineHeight: 1.4 }}>
+                                            Enter your email address in the field above before clicking "Forgot Password"
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEmailAlert(false)}
+                                        className="btn-close flex-shrink-0"
+                                        style={{ fontSize: '0.6rem', opacity: 0.45, marginTop: '2px' }}
+                                    />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
                         <div className="text-end mt-1">
-                            <Link to="/forgot-password" title="Forgot Password" className="small text-secondary fw-semibold text-decoration-none hover-gold transition-all">
+                            <a
+                                href="/forgot-password"
+                                onClick={handleForgotPasswordClick}
+                                className="small text-secondary fw-semibold text-decoration-none hover-gold transition-all"
+                                style={{ cursor: 'pointer' }}
+                            >
                                 Forgot Password?
-                            </Link>
+                            </a>
                         </div>
                         {errors.password && <span className="text-danger small mt-1 d-block">{errors.password.message}</span>}
                     </div>
@@ -143,7 +205,6 @@ const Login = () => {
                     <button type="submit" className="btn btn-advanced w-100 mt-2" disabled={isLoading}>
                         {isLoading ? 'Authenticating...' : 'Sign In'}
                     </button>
-
 
                     <div className="text-center mt-3">
                         <p className="small text-secondary mb-0">

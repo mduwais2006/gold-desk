@@ -66,7 +66,7 @@ const Signup = () => {
                     <p className="text-secondary small">Join Gold Desk Management Portal</p>
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="d-flex flex-column gap-3">
+                <form onSubmit={handleSubmit(onSubmit)} className="d-flex flex-column gap-3" autoComplete="off">
                     <div className="row g-3">
                         <div className="col-sm-6">
                             <label className="form-label small fw-semibold">Full Name</label>
@@ -75,6 +75,7 @@ const Signup = () => {
                                 className="form-control w-100 form-control-glass"
                                 placeholder="John Doe"
                                 {...register('name', { required: 'Name is required' })}
+                                autoComplete="off"
                             />
                             {errors.name && <span className="text-danger small mt-1 d-block">{errors.name.message}</span>}
                         </div>
@@ -85,7 +86,7 @@ const Signup = () => {
                                 className="form-control w-100 form-control-glass"
                                 placeholder="+1 234 567 890"
                                 {...register('phone', { required: 'Phone number is required' })}
-                                autoComplete="tel"
+                                autoComplete="off"
                             />
                             {errors.phone && <span className="text-danger small mt-1 d-block">{errors.phone.message}</span>}
                         </div>
@@ -98,7 +99,7 @@ const Signup = () => {
                             className="form-control w-100 form-control-glass"
                             placeholder="Golden Jewellers Ltd."
                             {...register('shopName')}
-                            autoComplete="organization"
+                            autoComplete="off"
                         />
                     </div>
 
@@ -109,7 +110,7 @@ const Signup = () => {
                             className="form-control w-100 form-control-glass theme-light"
                             placeholder="vendor@golddesk.com"
                             {...register('email', { required: 'Email is required' })}
-                            autoComplete="email"
+                            autoComplete="off"
                         />
                         {errors.email && <span className="text-danger small mt-1 d-block">{errors.email.message}</span>}
                     </div>
@@ -122,7 +123,7 @@ const Signup = () => {
                                 className="form-control w-100 form-control-glass with-toggle"
                                 placeholder="••••••••"
                                 {...register('password', { required: 'Password is required', minLength: { value: 6, message: 'Min 6 chars' } })}
-                                autoComplete="new-password"
+                                autoComplete="off"
                             />
                             <span 
                                 className="password-toggle-icon" 
@@ -150,6 +151,7 @@ const Signup = () => {
                                     required: 'Confirmation is required',
                                     validate: val => val === watch('password') || 'Passwords do not match'
                                 })}
+                                autoComplete="off"
                             />
                             <span 
                                 className="password-toggle-icon" 

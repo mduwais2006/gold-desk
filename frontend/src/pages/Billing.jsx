@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { usePrinter } from '../context/PrinterContext';
 import Receipt from '../components/Receipt';
+import SuggestionDropdown from '../components/SuggestionDropdown';
 import { io } from 'socket.io-client';
 
 const socket = io('http://localhost:5001');
@@ -48,6 +49,7 @@ const Billing = () => {
     const watchCustomerName = watch('customerName');
     const watchMobile = watch('mobile');
     const watchBillNumber = watch('billNumber');
+    const watchStaffName = watch('staffName');
 
     // Auto-Calculator & Live GST Dispatcher
     useEffect(() => {
@@ -81,21 +83,30 @@ const Billing = () => {
     // Custom Autocomplete Engine (Sources from DataEntry cache)
     const [suggestions, setSuggestions] = useState([]);
     const [activeSuggestionField, setActiveSuggestionField] = useState(null);
-    const uniqueCustomers = useMemo(() => JSON.parse(localStorage.getItem('cachedCustomers') || '[]'), []);
+    const { uniqueCustomers, uniqueStaff, uniqueItems } = useMemo(() => ({
+        uniqueCustomers: JSON.parse(localStorage.getItem('cachedCustomers') || '[]'),
+        uniqueStaff: JSON.parse(localStorage.getItem('cachedStaff') || '[]'),
+        uniqueItems: JSON.parse(localStorage.getItem('cachedItems') || '[]')
+    }), []);
 
     useEffect(() => {
         if (localStorage.getItem('disableAutocomplete') === 'true') {
             setSuggestions([]); 
             return;
         }
-        if (activeSuggestionField === 'customerName' && watchCustomerName?.length > 0) {
-            setSuggestions(uniqueCustomers.filter(c => c.name && c.name.toLowerCase().includes(watchCustomerName.toLowerCase())).slice(0, 5));
-        } else if (activeSuggestionField === 'mobile' && watchMobile?.length > 2) {
-            setSuggestions(uniqueCustomers.filter(c => c.mobile && c.mobile.includes(watchMobile)).slice(0, 5));
-        } else if (activeSuggestionField) {
+        if (activeSuggestionField === 'customerName') {
+            const query = watchCustomerName?.toLowerCase() || '';
+            setSuggestions(uniqueCustomers.filter(c => !query || (c.name && c.name.toLowerCase().includes(query))).map(c => ({ label: c.name, subLabel: `📱 ${c.mobile}`, ...c })).slice(0, 5));
+        } else if (activeSuggestionField === 'mobile') {
+            const query = watchMobile || '';
+            setSuggestions(uniqueCustomers.filter(c => !query || (c.mobile && c.mobile.includes(query))).map(c => ({ label: c.mobile, subLabel: `👤 ${c.name}`, ...c })).slice(0, 5));
+        } else if (activeSuggestionField === 'staffName') {
+            const query = watchStaffName?.toLowerCase() || '';
+            setSuggestions(uniqueStaff.filter(s => !query || s.toLowerCase().includes(query)).map(s => ({ label: s, value: s })).slice(0, 5));
+        } else {
             setSuggestions([]);
         }
-    }, [watchCustomerName, watchMobile, activeSuggestionField, uniqueCustomers]);
+    }, [watchCustomerName, watchMobile, watchStaffName, activeSuggestionField, uniqueCustomers, uniqueStaff]);
 
     const handleCalculateTotals = () => {
         let totalGstAmt = 0;
@@ -235,6 +246,7 @@ const Billing = () => {
                 if (customerDetails.customerName) setValue('customerName', customerDetails.customerName);
                 if (customerDetails.mobile) setValue('mobile', customerDetails.mobile);
                 if (customerDetails.billNumber) setValue('billNumber', customerDetails.billNumber);
+                if (customerDetails.staffName) setValue('staffName', customerDetails.staffName);
                 localStorage.removeItem('pendingCustomerDetails');
             } catch (e) {
                 console.error('Failed to parse pending customer details', e);
@@ -426,7 +438,7 @@ const Billing = () => {
 
                 <div className="row g-4 mb-5">
                     <div className="col-12">
-                        <form id="billingForm" onSubmit={handleSubmit(onSubmit)} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'off' : 'on'}>
+                        <form id="billingForm" onSubmit={handleSubmit(onSubmit)} autoComplete="off">
                             {/* Customer Details */}
                             <motion.div
                                 initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}
@@ -440,55 +452,69 @@ const Billing = () => {
                                 <div className="row g-3">
                                     <div className="col-md-3 position-relative">
                                         <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Customer Name</label>
-                                        <input type="text" className="form-control form-control-glass bg-light" placeholder="Enter Full Name" {...register('customerName', { required: true })} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'name'} onFocus={() => setActiveSuggestionField('customerName')} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} />
+                                        <input type="text" className="form-control form-control-glass bg-light" placeholder="Enter Full Name" {...register('customerName', { required: true })} autoComplete="one-time-code" onFocus={() => setActiveSuggestionField('customerName')} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} />
                                         
-                                        {/* Beautiful Suggestion Dropdown */}
-                                        {activeSuggestionField === 'customerName' && suggestions.length > 0 && (
-                                            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="position-absolute w-100 mt-1 shadow-lg border rounded-3 overflow-hidden bg-white" style={{ zIndex: 1050, top: '100%', left: 0 }}>
-                                                <div className="d-flex justify-content-between px-3 py-2 bg-light border-bottom">
-                                                    <span className="small fw-bold text-secondary">Past Customers</span>
-                                                    <button type="button" className="btn btn-sm btn-link text-danger p-0 fw-bold border-0 text-decoration-none" onMouseDown={(e) => { e.preventDefault(); setActiveSuggestionField(null); setSuggestions([]); }}>✕ Cancel</button>
-                                                </div>
-                                                <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
-                                                    {suggestions.map((s, i) => (
-                                                        <div key={i} className="px-3 py-2 border-bottom hover-bg-light" style={{ cursor: 'pointer', transition: 'background 0.2s' }} onMouseDown={(e) => { e.preventDefault(); setValue('customerName', s.name); setValue('mobile', s.mobile); setActiveSuggestionField(null); }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                                            <div className="fw-bold text-dark">{s.name}</div>
-                                                            <div className="small text-secondary fw-semibold">📱 {s.mobile}</div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </motion.div>
-                                        )}
+                                        <SuggestionDropdown 
+                                            isVisible={activeSuggestionField === 'customerName'}
+                                            suggestions={suggestions}
+                                            title="Past Customers"
+                                            onCancel={() => setActiveSuggestionField(null)}
+                                            onSelect={(s) => {
+                                                setValue('customerName', s.name, { shouldValidate: true });
+                                                setValue('mobile', s.mobile, { shouldValidate: true });
+                                                setActiveSuggestionField(null);
+                                            }}
+                                            renderItem={(s) => (
+                                                <>
+                                                    <div className="fw-bold text-dark">{s.label}</div>
+                                                    <div className="small text-secondary fw-semibold">{s.subLabel}</div>
+                                                </>
+                                            )}
+                                        />
                                     </div>
                                     <div className="col-md-3 position-relative">
                                         <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Mobile Number</label>
-                                        <input type="tel" className="form-control form-control-glass bg-light" placeholder="+91" {...register('mobile', { required: true })} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'tel'} onFocus={() => setActiveSuggestionField('mobile')} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} />
+                                        <input type="tel" className="form-control form-control-glass bg-light" placeholder="+91" {...register('mobile', { required: true })} autoComplete="one-time-code" onFocus={() => setActiveSuggestionField('mobile')} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} />
                                         
-                                        {/* Beautiful Suggestion Dropdown */}
-                                        {activeSuggestionField === 'mobile' && suggestions.length > 0 && (
-                                            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="position-absolute w-100 mt-1 shadow-lg border rounded-3 overflow-hidden bg-white" style={{ zIndex: 1050, top: '100%', left: 0 }}>
-                                                <div className="d-flex justify-content-between px-3 py-2 bg-light border-bottom">
-                                                    <span className="small fw-bold text-secondary">Past Customers</span>
-                                                    <button type="button" className="btn btn-sm btn-link text-danger p-0 fw-bold border-0 text-decoration-none" onMouseDown={(e) => { e.preventDefault(); setActiveSuggestionField(null); setSuggestions([]); }}>✕ Cancel</button>
-                                                </div>
-                                                <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
-                                                    {suggestions.map((s, i) => (
-                                                        <div key={i} className="px-3 py-2 border-bottom hover-bg-light" style={{ cursor: 'pointer', transition: 'background 0.2s' }} onMouseDown={(e) => { e.preventDefault(); setValue('customerName', s.name); setValue('mobile', s.mobile); setActiveSuggestionField(null); }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                                            <div className="fw-bold text-dark">{s.mobile}</div>
-                                                            <div className="small text-secondary fw-semibold">👤 {s.name}</div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </motion.div>
-                                        )}
+                                        <SuggestionDropdown 
+                                            isVisible={activeSuggestionField === 'mobile'}
+                                            suggestions={suggestions}
+                                            title="By Mobile"
+                                            onCancel={() => setActiveSuggestionField(null)}
+                                            onSelect={(s) => {
+                                                setValue('customerName', s.name, { shouldValidate: true });
+                                                setValue('mobile', s.mobile, { shouldValidate: true });
+                                                setActiveSuggestionField(null);
+                                            }}
+                                            renderItem={(s) => (
+                                                <>
+                                                    <div className="fw-bold text-dark">{s.label}</div>
+                                                    <div className="small text-secondary fw-semibold">{s.subLabel}</div>
+                                                </>
+                                            )}
+                                        />
                                     </div>
                                     <div className="col-md-3">
                                         <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Bill Number</label>
-                                        <input type="text" className="form-control form-control-glass bg-light fw-bold text-primary" placeholder="G26101" {...register('billNumber', { required: true })} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'off'} />
+                                        <input type="text" className="form-control form-control-glass bg-light fw-bold text-primary" placeholder="G26101" {...register('billNumber', { required: true })} autoComplete="off" />
                                     </div>
-                                    <div className="col-md-3">
+                                    <div className="col-md-3 position-relative">
                                         <label className="form-label small fw-900 text-high-contrast text-uppercase tracking-wider">Staff Name</label>
-                                        <input type="text" className="form-control form-control-glass bg-light" placeholder="Entry Handler" {...register('staffName')} />
+                                        <input type="text" className="form-control form-control-glass bg-light fw-bold" placeholder="Select Staff" {...register('staffName')} onFocus={() => setActiveSuggestionField('staffName')} onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)} autoComplete="off" />
+                                        
+                                        <SuggestionDropdown 
+                                            isVisible={activeSuggestionField === 'staffName'}
+                                            suggestions={suggestions}
+                                            title="History / Employees"
+                                            onCancel={() => setActiveSuggestionField(null)}
+                                            onSelect={(s) => {
+                                                setValue('staffName', s.value, { shouldValidate: true });
+                                                setActiveSuggestionField(null);
+                                            }}
+                                            renderItem={(s) => (
+                                                <div className="fw-bold text-dark text-uppercase">{s.label}</div>
+                                            )}
+                                        />
                                     </div>
                                 </div>
                             </motion.div>
@@ -536,13 +562,13 @@ const Billing = () => {
                                             className="row g-2 align-items-center mb-3 pb-3 border-bottom border-light position-relative"
                                         >
                                             <div className="col-md-2">
-                                                <input type="text" placeholder="e.g. Gold Chain" className="form-control form-control-glass bg-light" {...register(`items.${index}.itemName`, { required: true })} />
+                                                <input type="text" placeholder="e.g. Gold Chain" className="form-control form-control-glass bg-light" {...register(`items.${index}.itemName`, { required: true })} autoComplete="off" />
                                             </div>
                                             <div className="col-md-2">
-                                                <input type="number" step="0.001" placeholder="0.00" className="form-control form-control-glass bg-light px-3 text-center" {...register(`items.${index}.weight`)} />
+                                                <input type="number" step="0.001" placeholder="0.00" className="form-control form-control-glass bg-light px-3 text-center" {...register(`items.${index}.weight`)} autoComplete="off" />
                                             </div>
                                             <div className="col-md-2">
-                                                <input type="number" step="0.01" placeholder="0" className="form-control form-control-glass bg-light" {...register(`items.${index}.ratePerGram`)} />
+                                                <input type="number" step="0.01" placeholder="0" className="form-control form-control-glass bg-light" {...register(`items.${index}.ratePerGram`)} autoComplete="off" />
                                             </div>
                                             <div className="col-md-2 px-md-3">
                                                 <div className="d-flex align-items-center gap-2">
@@ -552,6 +578,7 @@ const Billing = () => {
                                                         className="form-control form-control-glass bg-light text-center p-2 fw-bold text-primary" 
                                                         style={{ borderRadius: '12px', minWidth: '55px' }}
                                                         {...register(`items.${index}.gst`)}
+                                                        autoComplete="off"
                                                     />
                                                     <span className="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold d-none d-md-block" style={{ padding: '8px 8px', borderRadius: '10px', fontSize: '0.7rem' }}>%</span>
                                                 </div>
@@ -562,7 +589,7 @@ const Billing = () => {
                                             <div className="col-md-3 d-flex align-items-center justify-content-end gap-2">
                                                 <div className="input-group input-group-sm w-100">
                                                     <span className="input-group-text border-0 fw-bold text-secondary bg-transparent">₹</span>
-                                                    <input type="number" step="0.01" className="form-control form-control-glass fw-bold text-success py-2 font-numeric" style={{ fontSize: '1rem' }} placeholder="0.00" {...register(`items.${index}.price`)} />
+                                                    <input type="number" step="0.01" className="form-control form-control-glass fw-bold text-success py-2 font-numeric" style={{ fontSize: '1rem' }} placeholder="0.00" {...register(`items.${index}.price`)} autoComplete="off" />
                                                 </div>
                                                 <button type="button" className="btn btn-link text-danger p-0 ms-1" onClick={() => remove(index)}>✖</button>
                                             </div>
@@ -626,7 +653,7 @@ const Billing = () => {
                                             [Apply to All]
                                         </button>
                                     </div>
-                                    <input type="number" className="form-control form-control-sm text-end fw-bold bg-white text-primary" style={{ width: '60px' }} {...register('gst')} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'on'} />
+                                    <input type="number" className="form-control form-control-sm text-end fw-bold bg-white text-primary" style={{ width: '60px' }} {...register('gst')} autoComplete="off" />
                                 </div>
 
                                 <div className="d-flex justify-content-between mb-4 align-items-center border-bottom pb-3">
@@ -637,7 +664,7 @@ const Billing = () => {
 
                                 <div className="d-flex justify-content-between align-items-center mb-2">
                                     <span className="text-danger fw-semibold">Discount</span>
-                                    <input type="number" className="form-control form-control-sm text-end fw-bold border-danger-subtle text-danger bg-danger-subtle" style={{ width: '90px' }} {...register('discount')} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'on'} />
+                                    <input type="number" className="form-control form-control-sm text-end fw-bold border-danger-subtle text-danger bg-danger-subtle" style={{ width: '90px' }} {...register('discount')} autoComplete="off" />
                                 </div>
                             </div>
 

@@ -148,10 +148,10 @@ const Inventory = () => {
                             <Modal.Title className="fw-bold">{editMode ? 'Edit Item' : 'Add New Item'}</Modal.Title>
                         </Modal.Header>
                         <Modal.Body>
-                            <form onSubmit={handleSubmit(onSubmit)} className="d-flex flex-column gap-3">
+                            <form onSubmit={handleSubmit(onSubmit)} className="d-flex flex-column gap-3" autoComplete="off">
                                 <div>
                                     <label className="form-label small fw-semibold">Item Name</label>
-                                    <input type="text" className="form-control form-control-glass" {...register('itemName', { required: true })} />
+                                    <input type="text" className="form-control form-control-glass" {...register('itemName', { required: true })} autoComplete="off" />
                                 </div>
                                 <div className="row g-3">
                                     <div className="col-6">
@@ -180,21 +180,21 @@ const Inventory = () => {
                                 <div className="row g-3">
                                     <div className="col-6">
                                         <label className="form-label small fw-semibold">Weight (Grams)</label>
-                                        <input type="number" step="0.01" className="form-control form-control-glass" {...register('weight', { required: true })} />
+                                        <input type="number" step="0.01" className="form-control form-control-glass" {...register('weight', { required: true })} autoComplete="off" />
                                     </div>
                                     <div className="col-6">
                                         <label className="form-label small fw-semibold">Quantity</label>
-                                        <input type="number" className="form-control form-control-glass" {...register('quantity', { required: true })} />
+                                        <input type="number" className="form-control form-control-glass" {...register('quantity', { required: true })} autoComplete="off" />
                                     </div>
                                 </div>
                                 <div className="row g-3">
                                     <div className="col-6">
                                         <label className="form-label small fw-semibold">Purchase Price</label>
-                                        <input type="number" className="form-control form-control-glass" {...register('purchasePrice', { required: true })} />
+                                        <input type="number" className="form-control form-control-glass" {...register('purchasePrice', { required: true })} autoComplete="off" />
                                     </div>
                                     <div className="col-6">
                                         <label className="form-label small fw-semibold">Selling Price</label>
-                                        <input type="number" className="form-control form-control-glass" {...register('sellingPrice', { required: true })} />
+                                        <input type="number" className="form-control form-control-glass" {...register('sellingPrice', { required: true })} autoComplete="off" />
                                     </div>
                                 </div>
                                 <div className="mt-3 d-flex justify-content-end gap-2">

@@ -23,6 +23,7 @@ const Settings = () => {
     const [darkMode, setDarkMode] = useState(document.documentElement.getAttribute('data-theme') === 'dark');
     const [autoPrintUpi, setAutoPrintUpi] = useState(localStorage.getItem('autoPrintUpi') !== 'false');
     const [is24Hour, setIs24Hour] = useState(localStorage.getItem('timeFormat') === '24h');
+    const [disableAutocomplete, setDisableAutocomplete] = useState(localStorage.getItem('disableAutocomplete') !== 'false'); // Default to true (Disabled) as per user request
 
     const [manualDate, setManualDate] = useState(getAppTime().toISOString().split('T')[0]);
     const [manualHour, setManualHour] = useState('12');
@@ -871,6 +872,20 @@ const Settings = () => {
                                                     </div>
                                                 </div>
 
+                                                <div className="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 className="mb-0 small fw-bold">Stop Google Suggestions</h6>
+                                                        <p className="small text-secondary m-0">Disable browser autofill for all inputs</p>
+                                                    </div>
+                                                    <div className="form-check form-switch fs-4">
+                                                        <input className="form-check-input" type="checkbox" checked={disableAutocomplete} onChange={(e) => {
+                                                            setDisableAutocomplete(e.target.checked);
+                                                            localStorage.setItem('disableAutocomplete', e.target.checked.toString());
+                                                            toast.success(`Google Suggestions ${e.target.checked ? 'Stopped' : 'Enabled'}`);
+                                                        }} style={{ cursor: 'pointer' }} />
+                                                    </div>
+                                                </div>
+
 
 
                                                 <div>
@@ -1003,7 +1018,7 @@ const Settings = () => {
                                             <div className="alert alert-info py-2 small mb-0">Fill in one or both of the fields below.</div>
                                             <div>
                                                 <label className="form-label small fw-semibold">New Username (Email / Mobile)</label>
-                                                <input type="text" placeholder="Leave empty to keep current" className="form-control form-control-glass" value={credentialData.newLoginIdentifier} onChange={e => setCredentialData({ ...credentialData, newLoginIdentifier: e.target.value })} autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'username'} />
+                                                <input type="text" placeholder="Leave empty to keep current" className="form-control form-control-glass" value={credentialData.newLoginIdentifier} onChange={e => setCredentialData({ ...credentialData, newLoginIdentifier: e.target.value })} autoComplete="off" />
                                             </div>
                                             <div>
                                                 <label className="form-label small fw-semibold">New Password</label>
@@ -1014,7 +1029,7 @@ const Settings = () => {
                                                         className="form-control form-control-glass with-toggle" 
                                                         value={credentialData.newPassword} 
                                                         onChange={e => setCredentialData({ ...credentialData, newPassword: e.target.value })} 
-                                                        autoComplete={localStorage.getItem('disableAutocomplete') === 'true' ? 'new-password' : 'new-password'}
+                                                        autoComplete="off"
                                                     />
                                                     <span 
                                                         className="password-toggle-icon" 
@@ -1039,7 +1054,7 @@ const Settings = () => {
                                                         className="form-control form-control-glass with-toggle" 
                                                         value={credentialData.confirmPassword} 
                                                         onChange={e => setCredentialData({ ...credentialData, confirmPassword: e.target.value })} 
-                                                        autoComplete="new-password"
+                                                        autoComplete="off"
                                                     />
                                                     <span 
                                                         className="password-toggle-icon" 

@@ -1,18 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
+import { io } from 'socket.io-client';
 import api from '../utils/api';
+
+const socket = io('http://localhost:5001');
 
 const ForgotPassword = () => {
     const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm();
     const [isLoading, setIsLoading] = useState(false);
-    const [step, setStep] = useState(1); // 1: Recovery Email, 2: OTP + New Password
+    const [step, setStep] = useState(1); // 1: Recovery Email, 2: OTP, 3: New Password
     const [enteredEmail, setEnteredEmail] = useState('');
     const [recoveryEmailHint, setRecoveryEmailHint] = useState('');
+    const [savedOtp, setSavedOtp] = useState('');
     const [resendTimer, setResendTimer] = useState(0);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
+
 
     useEffect(() => {
         let interval;
@@ -21,6 +29,31 @@ const ForgotPassword = () => {
         }
         return () => clearInterval(interval);
     }, [resendTimer]);
+
+    useEffect(() => {
+        // Listen for real-time security block from mobile email click
+        socket.on('reset_blocked', (data) => {
+            if (step > 1) {
+                setStep(1);
+                Swal.fire({
+                    icon: 'error',
+                    title: '🛑 Security Lock Engaged',
+                    text: 'The account owner has blocked this reset attempt from their mobile device. Access denied.',
+                    background: '#fff1f2',
+                    confirmButtonColor: '#ef4444',
+                    showClass: {
+                        popup: 'animate__animated animate__fadeInDown'
+                    }
+                }).then(() => {
+                    navigate('/login');
+                });
+            }
+        });
+
+        return () => {
+            socket.off('reset_blocked');
+        };
+    }, [step, navigate]);
 
     const onRequestOtp = async (data) => {
         try {
@@ -64,30 +97,87 @@ const ForgotPassword = () => {
         }
     };
 
+    const onVerifyOtp = async (data) => {
+        try {
+            setIsLoading(true);
+            await api.post('/auth/forgot-password/verify-otp', {
+                accountEmail: enteredEmail,
+                otp: data.otp,
+            });
+            setSavedOtp(data.otp);
+            setStep(3);
+        } catch (error) {
+            const errorMsg = error.response?.data?.message || 'Invalid OTP';
+            const isBlocked = error.response?.status === 403 || error.response?.data?.isBlocked;
+            
+            if (isBlocked) {
+                setStep(1);
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Access Blocked',
+                    text: 'Warning: You are wrongly trying to change another one\'s account details! This session has been terminated for security.',
+                    confirmButtonColor: '#ef4444'
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Verification Failed',
+                    text: errorMsg.charAt(0).toUpperCase() + errorMsg.slice(1),
+                    confirmButtonColor: 'var(--accent-primary)'
+                });
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const onVerifyAndReset = async (data) => {
         try {
             setIsLoading(true);
             await api.post('/auth/forgot-password/reset', {
                 accountEmail: enteredEmail,
-                otp: data.otp,
+                otp: savedOtp,
                 newPassword: data.newPassword
             });
             Swal.fire({
                 icon: 'success',
                 title: 'Success!',
-                text: 'Password reset successfully! Please log in with your new password.',
+                text: 'Password reset successfully! A confirmation email has been sent to your recovery address.',
                 confirmButtonColor: 'var(--accent-primary)'
             }).then(() => {
                 navigate('/login');
             });
         } catch (error) {
-            const errorMsg = error.response?.data?.message || 'Invalid OTP or Reset Failed';
-            Swal.fire({
-                icon: 'error',
-                title: 'Reset Failed',
-                text: errorMsg.charAt(0).toUpperCase() + errorMsg.slice(1),
-                confirmButtonColor: 'var(--accent-primary)'
-            });
+            const errorMsg = error.response?.data?.message || 'Reset Failed';
+            const isReuse = error.response?.data?.isReuse;
+            const isBlocked = error.response?.data?.isBlocked;
+
+            if (isBlocked) {
+                setStep(1);
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Session Terminated',
+                    text: 'This reset attempt was blocked by the account owner.',
+                    confirmButtonColor: '#ef4444'
+                });
+            } else if (isReuse) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Password Already Used',
+                    text: 'This password was used previously. Please use a fresh, unique password for better security!',
+                    confirmButtonColor: 'var(--accent-primary)',
+                    showClass: {
+                        popup: 'animate__animated animate__shakeX'
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Reset Failed',
+                    text: errorMsg.charAt(0).toUpperCase() + errorMsg.slice(1),
+                    confirmButtonColor: 'var(--accent-primary)'
+                });
+            }
         } finally {
             setIsLoading(false);
         }
@@ -101,18 +191,20 @@ const ForgotPassword = () => {
                         <span style={{ fontSize: '1.5rem' }}>{step === 1 ? '🔑' : '🛡️'}</span>
                     </div>
                     <h2 className="fw-bold mb-1" style={{ color: 'var(--accent-primary)' }}>
-                        {step === 1 ? 'Forgot Password' : 'Verify & Reset'}
+                        {step === 1 ? 'Forgot Password' : step === 2 ? 'Verify OTP' : 'Change Password'}
                     </h2>
                     <p className="text-secondary small">
                         {step === 1
                             ? 'Enter the Recovery Email you set in Settings.'
-                            : `OTP sent to ${recoveryEmailHint}. Enter it below along with your new password.`}
+                            : step === 2
+                            ? `OTP sent to ${recoveryEmailHint}. Enter it below.`
+                            : 'Enter and confirm your new password.'}
                     </p>
                 </div>
 
                 {/* Step 1: Enter Recovery Email */}
                 {step === 1 && (
-                    <form onSubmit={handleSubmit(onRequestOtp)} className="d-flex flex-column gap-3">
+                    <form onSubmit={handleSubmit(onRequestOtp)} className="d-flex flex-column gap-3" autoComplete="off">
                         <div>
                             <label className="form-label small fw-semibold text-secondary">
                                 Your Recovery Email
@@ -123,6 +215,7 @@ const ForgotPassword = () => {
                                 className="form-control form-control-glass"
                                 placeholder="e.g. yourrecovery@gmail.com"
                                 {...register('email', { required: 'Recovery email is required' })}
+                                autoComplete="off"
                             />
                             {errors.email && <span className="text-danger small mt-1 d-block">{errors.email.message}</span>}
                         </div>
@@ -139,9 +232,9 @@ const ForgotPassword = () => {
                     </form>
                 )}
 
-                {/* Step 2: Enter OTP + New Password */}
+                {/* Step 2: Enter OTP */}
                 {step === 2 && (
-                    <form onSubmit={handleSubmit(onVerifyAndReset)} className="d-flex flex-column gap-3">
+                    <form onSubmit={handleSubmit(onVerifyOtp)} className="d-flex flex-column gap-3" autoComplete="off">
                         <div>
                             <label className="form-label small fw-semibold text-secondary text-center d-block">
                                 6-Digit Recovery Code
@@ -153,6 +246,7 @@ const ForgotPassword = () => {
                                 placeholder="------"
                                 style={{ letterSpacing: '0.4em' }}
                                 {...register('otp', { required: 'OTP is required', minLength: { value: 6, message: 'OTP must be 6 digits' } })}
+                                autoComplete="off"
                             />
                             {errors.otp && <span className="text-danger small mt-1 d-block text-center">{errors.otp.message}</span>}
                             <div className="text-center mt-2">
@@ -167,6 +261,17 @@ const ForgotPassword = () => {
                             </div>
                         </div>
 
+                        <button type="submit" className="btn-gold w-100 mt-2 py-2 fw-bold" disabled={isLoading}>
+                            {isLoading ? (
+                                <span><span className="spinner-border spinner-border-sm me-2"></span>Verifying...</span>
+                            ) : '🛡️ Verify OTP'}
+                        </button>
+                    </form>
+                )}
+
+                {/* Step 3: Enter New Password */}
+                {step === 3 && (
+                    <form onSubmit={handleSubmit(onVerifyAndReset)} className="d-flex flex-column gap-3" autoComplete="off">
                         <div>
                             <label className="form-label small fw-semibold text-secondary">New Password</label>
                             <div className="password-field-container">
@@ -175,6 +280,7 @@ const ForgotPassword = () => {
                                     className="form-control form-control-glass with-toggle"
                                     placeholder="Min. 6 characters"
                                     {...register('newPassword', { required: 'New password is required', minLength: { value: 6, message: 'Password must be at least 6 characters' } })}
+                                autoComplete="off"
                                 />
                                 <span 
                                     className="password-toggle-icon" 
@@ -202,6 +308,7 @@ const ForgotPassword = () => {
                                         required: 'Please confirm your password',
                                         validate: val => val === watch('newPassword') || 'Passwords do not match'
                                     })}
+                                    autoComplete="off"
                                 />
                                 <span 
                                     className="password-toggle-icon" 
@@ -221,7 +328,7 @@ const ForgotPassword = () => {
                         <button type="submit" className="btn-gold w-100 mt-2 py-2 fw-bold" disabled={isLoading}>
                             {isLoading ? (
                                 <span><span className="spinner-border spinner-border-sm me-2"></span>Resetting...</span>
-                            ) : '🔐 Verify & Reset Password'}
+                            ) : '🔐 Change Password'}
                         </button>
                     </form>
                 )}

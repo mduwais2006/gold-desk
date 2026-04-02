@@ -200,15 +200,15 @@ const About = () => {
                                 </div>
                                 <div className="col-md-7 border-start border-light border-opacity-10 ps-md-5">
                                     <h1 className="fw-900 mb-4 feedback-heading text-start">Feedback</h1>
-                                    <form onSubmit={handleContactSubmit}>
+                                    <form onSubmit={handleContactSubmit} autoComplete="off">
                                         <div className="row g-3">
                                             <div className="col-md-6 text-start">
                                                 <label className="form-label fw-bold text-secondary small">Authorized Name</label>
-                                                <input type="text" className="form-control form-control-glass bg-light bg-opacity-10" placeholder="Your Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                                                <input type="text" className="form-control form-control-glass bg-light bg-opacity-10" placeholder="Your Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required autoComplete="off" />
                                             </div>
                                             <div className="col-md-6 text-start">
                                                 <label className="form-label fw-bold text-secondary small">Security Email</label>
-                                                <input type="email" className="form-control form-control-glass bg-light bg-opacity-10" placeholder="your@email.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
+                                                <input type="email" className="form-control form-control-glass bg-light bg-opacity-10" placeholder="your@email.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required autoComplete="off" />
                                             </div>
                                             <div className="col-12 text-start">
                                                 <label className="form-label fw-bold text-secondary small">Detailed Inquiry</label>
