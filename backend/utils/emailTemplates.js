@@ -94,13 +94,38 @@ const getResetAlertEmailTemplate = (otp, otpId, frontendUrl, backendUrl, shopNam
                 <p style="color: #1e293b; font-weight: 600; margin-bottom: 20px;">Are you the one trying to reset the password?</p>
                 <div style="display: flex; justify-content: center; gap: 15px;">
                     <a href="${frontendUrl || 'http://localhost:5173'}/login" style="background: #10b981; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: 700; display: inline-block;">Yes, I am</a>
-                    <a href="${backendUrl || 'http://localhost:5000'}/api/auth/forgot-password/cancel?id=${otpId}" style="background: #ef4444; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: 700; display: inline-block;">I am not</a>
+                    <a href="${backendUrl}/api/auth/forgot-password/cancel?id=${otpId}" style="background: #ef4444; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: 700; display: inline-block;">I am not</a>
                 </div>
             </div>
             
             <p style="color: #64748b; font-size: 13px; text-align: center; line-height: 1.5;">
                 Clicking "I am not" will immediately block the password reset attempt and protect your account.
+                For urgent help, contact <a href="mailto:golddesk.help@gmail.com" style="color: #eab308; font-weight: 600;">golddesk.help@gmail.com</a>.
             </p>
+        </div>
+    `;
+};
+
+const getBlockConfirmationEmailTemplate = (shopName = 'Gold Desk Premium') => {
+    return `
+        <div style="font-family: 'Inter', -apple-system, sans-serif; max-width: 600px; margin: 30px auto; padding: 40px; border-radius: 24px; background: #ffffff; box-shadow: 0 20px 50px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div style="font-size: 48px; margin-bottom: 15px;">🛡️</div>
+                <h2 style="color: #1e293b; font-size: 24px; font-weight: 700; margin: 0;">Reset Attempt Blocked</h2>
+            </div>
+            
+            <p style="color: #475569; font-size: 16px; text-align: center; line-height: 1.6;">
+                We have successfully blocked the password reset attempt on your <strong>${shopName}</strong> account.
+            </p>
+            
+            <p style="color: #475569; font-size: 15px; text-align: center; line-height: 1.6; margin-top: 20px;">
+                We are taking further security steps immediately to investigate this incident.
+            </p>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #fffcf0; border-radius: 12px; text-align: center; border: 1px solid #fef3c7;">
+                <p style="color: #92400e; margin: 0; font-weight: 600;">Please report this attempt to our security team:</p>
+                <a href="mailto:golddesk.help@gmail.com" style="color: #eab308; font-size: 18px; font-weight: 700; text-decoration: none; margin-top: 5px; display: block;">golddesk.help@gmail.com</a>
+            </div>
         </div>
     `;
 };
@@ -134,5 +159,6 @@ module.exports = {
     getOtpEmailTemplate,
     getWelcomeEmailTemplate,
     getResetAlertEmailTemplate,
-    getPasswordChangedEmailTemplate
+    getPasswordChangedEmailTemplate,
+    getBlockConfirmationEmailTemplate
 };

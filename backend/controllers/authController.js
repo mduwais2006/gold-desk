@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const { db, admin } = require('../config/firebase');
-const { getOtpEmailTemplate, getWelcomeEmailTemplate, getResetAlertEmailTemplate, getPasswordChangedEmailTemplate } = require('../utils/emailTemplates');
+const { getOtpEmailTemplate, getWelcomeEmailTemplate, getResetAlertEmailTemplate, getPasswordChangedEmailTemplate, getBlockConfirmationEmailTemplate } = require('../utils/emailTemplates');
 
 // BLAZING FAST: Initialize Transporter once at top level
 const transporter = nodemailer.createTransport({
@@ -576,17 +576,22 @@ const forgotPasswordCancel = async (req, res) => {
             
             if (otpSnap.exists) {
                 await otpRef.update({ status: 'cancelled_by_user' });
+                
+                // Send a second confirmation email to the user explaining further steps
+                sendEmail({
+                    email: userDoc.data().recoveryEmail || userDoc.data().email,
+                    subject: `🛡️ Security Update: Account Protected - ${userDoc.data().shopName || 'Gold Desk'}`,
+                    message: `We have blocked the reset attempt. Please report any suspicious activity to golddesk.help@gmail.com.`,
+                    html: getBlockConfirmationEmailTemplate(userDoc.data().shopName)
+                });
+
                 found = true;
                 break;
             }
         }
 
         if (found) {
-            // Emit socket event to notify all connected clients for this user
-            // In a real app we'd target specific user, but for now we emit to all
-            // The frontend ForgotPassword.jsx will listen for this.
             req.io.emit('reset_blocked', { otpId: id });
-
             res.send(`
                 <!DOCTYPE html>
                 <html>
@@ -595,10 +600,13 @@ const forgotPasswordCancel = async (req, res) => {
                     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
                     <style>
                         body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-                        .card { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; max-width: 400px; }
-                        h1 { color: #ef4444; margin-top: 0; }
-                        p { color: #64748b; line-height: 1.6; }
+                        .card { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; max-width: 440px; }
+                        h1 { color: #ef4444; margin-top: 0; font-size: 24px; }
+                        p { color: #64748b; line-height: 1.6; font-size: 15px; }
                         .icon { font-size: 64px; margin-bottom: 20px; }
+                        .help-box { margin-top: 25px; padding: 15px; background: #fffcf0; border-radius: 12px; border: 1px solid #fef3c7; }
+                        .help-text { color: #92400e; font-weight: 600; font-size: 13px; margin-bottom: 5px; }
+                        .email-link { color: #eab308; font-weight: 700; text-decoration: none; font-size: 16px; }
                     </style>
                 </head>
                 <body>
@@ -606,8 +614,12 @@ const forgotPasswordCancel = async (req, res) => {
                         <div class="icon">🛡️</div>
                         <h1>Account Protected</h1>
                         <p>The password reset attempt has been blocked successfully.</p>
-                        <p>The application on your laptop has been notified and the reset process has been terminated.</p>
-                        <p>Your current password remains active. You can now close this window on your mobile.</p>
+                        <p>The unauthorized user on the laptop has been immediately disconnected and blocked.</p>
+                        <div class="help-box">
+                            <div class="help-text">Please report this incident to:</div>
+                            <a href="mailto:golddesk.help@gmail.com" class="email-link">golddesk.help@gmail.com</a>
+                        </div>
+                        <p style="margin-top: 20px; font-size: 13px;">We are taking further security steps immediately. You can now close this window.</p>
                     </div>
                 </body>
                 </html>
