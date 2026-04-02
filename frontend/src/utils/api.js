@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:5001/api',
+    baseURL: import.meta.env.MODE === 'production' 
+             ? `${window.location.origin}/api` 
+             : 'http://localhost:5001/api',
 });
 
 // Request interceptor to add the auth token header to requests
