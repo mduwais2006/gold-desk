@@ -1,5 +1,14 @@
 const admin = require('firebase-admin');
-const serviceAccount = require('../serviceAccountKey.json');
+
+let serviceAccount;
+
+// In Vercel/Production, we load from Environment Variable to keep it secure
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+} else {
+    // In Local Development, we can still use the physical file
+    serviceAccount = require('../serviceAccountKey.json');
+}
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
