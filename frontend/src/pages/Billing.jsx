@@ -133,8 +133,8 @@ const Billing = () => {
         setSubmittedItems(items);
         toast.info('List synchronized with Summary!');
 
-        // Smooth scroll to summary card
-        if (summaryRef.current) {
+        // Smooth scroll to summary card (Desktop only to avoid jitter)
+        if (summaryRef.current && window.innerWidth > 768) {
             summaryRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     };

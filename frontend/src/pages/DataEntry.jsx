@@ -31,7 +31,7 @@ const DataEntry = () => {
 
     // Automatic smooth scroll to form on entry
     useEffect(() => {
-        if (activeTab === 'entry' && formRef.current) {
+        if (activeTab === 'entry' && formRef.current && window.innerWidth > 768) {
             formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }, [activeTab]);
@@ -1049,10 +1049,10 @@ const DataEntry = () => {
 
                                             <tr><td colSpan="10" className="text-center py-5 text-secondary">
                                                 <h1 className="display-4 opacity-10">📂</h1>
-                                                No records found matching these filters.
+                                                No records found for the last 6 months.
                                             </td></tr>
                                         ) : (
-                                            filteredReports.map((entry, idx) => (
+                                            filteredReports.slice(0, 100).map((entry, idx) => (
                                                 <tr key={entry.id} className="align-middle" style={{ borderBottom: '1px solid var(--border-color)' }}>
                                                     <td className="px-4 text-secondary small">
                                                         <div className="badge bg-gold-soft border border-gold-subtle mb-1 fw-bold fs-6" style={{ fontSize: '0.85rem', color: '#000000' }}>{entry.billNumber || 'NO-ID'}</div>
