@@ -48,8 +48,8 @@ const createBill = async (req, res) => {
         const shopInitial = (userData?.shopName || 'G').charAt(0).toUpperCase();
         const yearYY = new Date().getFullYear().toString().slice(-2);
         
-        const billSnapshot = await db.collection('users').doc(userId).collection('bills').get();
-        const billCount = billSnapshot.size + 1;
+        const countSnapshot = await db.collection('users').doc(userId).collection('bills').count().get();
+        const billCount = countSnapshot.data().count + 1;
         const billNumber = req.body.billNumber || `${shopInitial}${yearYY}${String(billCount).padStart(2, '0')}`;
 
         const billData = {

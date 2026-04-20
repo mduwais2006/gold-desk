@@ -44,6 +44,12 @@ html {
   scroll-behavior: smooth;
 }
 
+@media (max-width: 768px) {
+  html {
+    scroll-behavior: auto !important;
+  }
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -262,6 +268,22 @@ thead.thead-glass {
   background-image: none !important;
   border: 1px solid rgba(255,255,255,0.06) !important;
   color: var(--text-primary) !important;
+}
+
+[data-theme='dark'] .btn-light,
+[data-theme='dark'] .btn-outline-secondary {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme='dark'] .text-dark,
+[data-theme='dark'] .text-secondary {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .bg-white {
+  background-color: #0c0c0c !important;
 }
 
 

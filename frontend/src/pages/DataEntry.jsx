@@ -509,8 +509,8 @@ const DataEntry = () => {
                 window.print();
             }, 500);
 
-            // Always generate a digital PDF as fallback
-            await generateInvoicePdf(payload);
+            // Digital PDF fallback removed per user request to avoid adobe/pdf readers
+            // await generateInvoicePdf(payload);
 
             if (printedOnHardware) {
                 toast.success('Bill Generated & Printed Successfully! 📠');

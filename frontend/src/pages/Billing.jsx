@@ -359,8 +359,8 @@ const Billing = () => {
                 toast.error(printErr.message || "Bluetooth printer unresponsive. Printing skipped.");
             }
 
-            // Fallback & Digital Record (PDF)
-            await generateInvoicePdf({ ...payload, gstPercentage: parseFloat(data.gst) || 0 });
+            // Fallback & Digital Record (PDF) removed
+            // await generateInvoicePdf({ ...payload, gstPercentage: parseFloat(data.gst) || 0 });
 
             // ----------------------------------------------------
             // BROWSER PRINT ENGINE (RESPONSIVE HTML)
