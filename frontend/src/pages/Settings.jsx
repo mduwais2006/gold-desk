@@ -490,22 +490,29 @@ const Settings = () => {
                     <h2 className="fw-bold m-0">Settings</h2>
                 </div>
 
-                {/* Tab Navigation */}
-                <div className="d-flex gap-2 mb-4 overflow-auto pb-2 noscroll">
+                {/* Responsive Settings Navigation - Grid on Mobile, Flex on Desktop */}
+                <div className="settings-nav-container mb-4">
                     {['branding', 'billing', 'security', 'machine', 'system'].map(tab => (
-                        <motion.button
+                        <button
                             key={tab}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
                             onClick={() => setActiveTab(tab)}
-                            className={`btn rounded-pill px-4 fw-bold text-nowrap transition-all ${activeTab === tab ? 'btn-gold shadow-sm' : 'btn-light border text-secondary'}`}
+                            className={`settings-nav-btn ${activeTab === tab ? 'active' : ''}`}
                         >
-                            {tab === 'branding' && '🏠 Shop Logo & Name'}
-                            {tab === 'billing' && '💰 Payments & Taxes'}
-                            {tab === 'security' && '🔒 Login & Security'}
-                            {tab === 'machine' && '🖨️ Billing Machine'}
-                            {tab === 'system' && '⚙️ System Settings'}
-                        </motion.button>
+                            <span className="btn-icon">
+                                {tab === 'branding' && '🏠'}
+                                {tab === 'billing' && '💰'}
+                                {tab === 'security' && '🔒'}
+                                {tab === 'machine' && '🖨️'}
+                                {tab === 'system' && '⚙️'}
+                            </span>
+                            <span className="btn-text">
+                                {tab === 'branding' && 'Shop Info'}
+                                {tab === 'billing' && 'Taxes'}
+                                {tab === 'security' && 'Security'}
+                                {tab === 'machine' && 'Machine'}
+                                {tab === 'system' && 'System'}
+                            </span>
+                        </button>
                     ))}
                 </div>
 
