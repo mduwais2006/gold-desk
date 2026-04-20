@@ -26,10 +26,12 @@ api.interceptors.response.use(
         return response;
     },
     (error) => {
-        if (error.response && error.response.status === 401) {
-            // Optional: Handle token expiration logic, e.g. logout user
-            // localStorage.removeItem('user');
-            // window.location.href = '/login';
+        if (error.response) {
+            console.error(`[API ERROR] ${error.config.method.toUpperCase()} ${error.config.url}:`, error.response.status, error.response.data);
+        } else if (error.request) {
+            console.error(`[NETWORK ERROR] No response from server. Check if backend is running at ${error.config.baseURL}`);
+        } else {
+            console.error('[REQ ERROR]', error.message);
         }
         return Promise.reject(error);
     }
